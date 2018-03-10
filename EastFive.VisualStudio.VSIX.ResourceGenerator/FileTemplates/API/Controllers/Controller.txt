@@ -1,0 +1,55 @@
+﻿using System;
+using System.Net.Http;
+using System.Web.Http;
+using System.Threading.Tasks;
+using BlackBarLabs.Api;
+using {{project_namespace}}.Actions;
+using {{project_namespace}}.Resources;
+
+namespace {{project_namespace}}.Controllers
+{
+    [System.Web.Http.RoutePrefix("api/{{resource_name}}")]
+    public class {{resource_name}}Controller : BaseController
+    {
+        public IHttpActionResult Get([FromUri]BlackBarLabs.Api.ResourceQueryBase query)
+        {
+            return new HttpActionResult(() => {{resource_name}}Actions.GetAsync(query, this.Request, this.Url));
+        }
+
+        public IHttpActionResult Post([FromBody]Resources.{{resource_name}} resource)
+        {
+            return new HttpActionResult(() => resource.PostAsync(this.Request, this.Url));
+        }
+
+        public IHttpActionResult Put(Guid id, [FromBody]Resources.{{resource_name}} resource)
+        {
+            return new HttpActionResult(() => resource.PutAsync(this.Request, this.Url));
+        }
+
+        public IHttpActionResult Delete([FromBody]BlackBarLabs.Api.ResourceQueryBase query)
+        {
+            return new HttpActionResult(() => {{resource_name}}Actions.DeleteAsync(query, this.Request, this.Url));
+        }
+
+        public Task<HttpResponseMessage> Options()
+        {
+            var results = {{resource_name}}Options.GetOptions(this.Request,
+                (post, get, update, delete) =>
+                {
+                    var response = this.Request.CreateResponse(System.Net.HttpStatusCode.OK);
+                    response.Content = new StringContent("");
+                    if (post)
+                        response.Content.Headers.Allow.Add(HttpMethod.Post.Method);
+                    if (get)
+                        response.Content.Headers.Allow.Add(HttpMethod.Get.Method);
+                    if (update)
+                        response.Content.Headers.Allow.Add(HttpMethod.Put.Method);
+                    if (delete)
+                        response.Content.Headers.Allow.Add(HttpMethod.Delete.Method);
+                    response.Content.Headers.Add("Access-Control-Expose-Headers", "Allow");
+                    return response;
+                });
+            return results;
+        }
+    }
+}
