@@ -60,7 +60,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
         /// </summary>
         protected override void Initialize()
         {
-            Command1.Initialize(this);
+            ResourceGenerator.Initialize(this);
             base.Initialize();
         }
 

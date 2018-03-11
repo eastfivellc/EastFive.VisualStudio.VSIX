@@ -6,13 +6,14 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace EastFive.VisualStudio.VSIX.ResourceGenerator
 {
     /// <summary>
     /// Command handler
     /// </summary>
-    internal sealed class Command1
+    internal sealed class ResourceGenerator
     {
         /// <summary>
         /// Command ID.
@@ -34,7 +35,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
         /// Adds our command handlers for menu (commands must exist in the command table file)
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
-        private Command1(Package package)
+        private ResourceGenerator(Package package)
         {
             if (package == null)
             {
@@ -55,7 +56,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
         /// <summary>
         /// Gets the instance of the command.
         /// </summary>
-        public static Command1 Instance
+        public static ResourceGenerator Instance
         {
             get;
             private set;
@@ -78,7 +79,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
         /// <param name="package">Owner package, not null.</param>
         public static void Initialize(Package package)
         {
-            Instance = new Command1(package);
+            Instance = new ResourceGenerator(package);
         }
 
         /// <summary>
@@ -93,15 +94,18 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
             var solution = VsixHelper.Ide.Solution;
             var projectNames = solution.GetProjects().Select(proj => proj.Name).OrderBy(x => x).ToArray();
 
-            Func<ResourceInfo, bool> resourceTransfer = (rsrc) => 
+            Func<ResourceInfo, bool> resourceTransfer = (rsrc) =>
             {
-                WriteFile("EastFive.VisualStudio.VSIX.ResourceGenerator.FileTemplates.API.Controllers.Controller.txt", 
-                            "filepath", rsrc.APIProjectName);
+                //WriteFile("EastFive.VisualStudio.VSIX.ResourceGenerator.FileTemplates.API.Controllers.Controller.txt",
+                //            "filepath", rsrc.APIProjectName);
+
+                var installationPath = GetAssemblyLocalPathFrom(typeof(ResourceGenerator));
+                var path = Path.GetDirectoryName(installationPath);
 
                 var asdf = rsrc.APIProjectName + rsrc.BusinessProjectName + rsrc.PersistenceProjectName + rsrc.APITestProjectName;
                 VsShellUtilities.ShowMessageBox(
                     this.ServiceProvider,
-                    asdf,
+                    installationPath,
                     rsrc.ResourceName,
                     OLEMSGICON.OLEMSGICON_INFO,
                     OLEMSGBUTTON.OLEMSGBUTTON_OK,
@@ -119,27 +123,95 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
 
         private void WriteFile(string resourceName, string filePath, string projectNamespace)
         {
-            // Get current assembly
-            var assembly = Assembly.GetExecutingAssembly();
-
-            string template = String.Empty;
-
-            // Read resource from assembly
-            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-            using (StreamReader reader = new StreamReader(stream))
+            try
             {
-                template = reader.ReadToEnd();
-                template
-                    .Replace("{{project_namespace}}", projectNamespace)
-                    .Replace("{{resource_name}}", resourceName);
+                // Get current assembly
+                var assembly = Assembly.GetExecutingAssembly();
 
-                // Write data in the new text file
-                filePath = "C:\\temp\\myFileName.cs";
-                using (TextWriter writer = File.CreateText(filePath))
+                string template = String.Empty;
+
+                using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
+                using (var reader = new StreamReader(stream))
                 {
-                    writer.WriteLine(template);
+                    template = reader.ReadToEnd();
+                    template
+                        .Replace("{{project_namespace}}", projectNamespace)
+                        .Replace("{{resource_name}}", resourceName);
+
+                    // Write data in the new text file
+                    filePath = "C:\\temp\\myFileName.cs";
+                    using (TextWriter writer = File.CreateText(filePath))
+                    {
+                        writer.WriteLine(template);
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                var names = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+                var namesStr = string.Empty;
+                foreach(var name in names)
+                {
+                    namesStr += name;
+                }
+
+                VsShellUtilities.ShowMessageBox(
+                   this.ServiceProvider,
+                   namesStr,
+                   "Error",
+                   OLEMSGICON.OLEMSGICON_INFO,
+                   OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                   OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+            }
+
+
+
+            //// Read resource from assembly
+            //using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            //using (TextReader reader = new TextReader(stream))
+            //{
+            //    template = reader.ReadToEnd();
+            //    template
+            //        .Replace("{{project_namespace}}", projectNamespace)
+            //        .Replace("{{resource_name}}", resourceName);
+
+            //    // Write data in the new text file
+            //    filePath = "C:\\temp\\myFileName.cs";
+            //    using (TextWriter writer = File.CreateText(filePath))
+            //    {
+            //        writer.WriteLine(template);
+            //    }
+            //}
+
+
+            ////Assembly assembly = Assembly.GetExecutingAssembly();
+            //Assembly a = Assembly.GetExecutingAssembly();
+            ////Stream stream = assembly.GetManifestResourceStream("Installer.Properties.mydll.dll"); // or whatever
+            ////string my_namespace = a.GetName().Name.ToString();
+            //Stream resFilestream = a.GetManifestResourceStream(resourceName);
+            //if (resFilestream != null)
+            //{
+            //    BinaryReader br = new BinaryReader(resFilestream);
+            //    FileStream fs = new FileStream(location, FileMode.Create); // Say
+            //    BinaryWriter bw = new BinaryWriter(fs);
+            //    byte[] ba = new byte[resFilestream.Length];
+            //    resFilestream.Read(ba, 0, ba.Length);
+            //    bw.Write(ba);
+            //    br.Close();
+            //    bw.Close();
+            //    resFilestream.Close();
+
+
+
+
+            //}
+        }
+
+        static string GetAssemblyLocalPathFrom(Type type)
+        {
+            string codebase = type.Assembly.CodeBase;
+            var uri = new Uri(codebase, UriKind.Absolute);
+            return uri.LocalPath;
         }
     }
 }
