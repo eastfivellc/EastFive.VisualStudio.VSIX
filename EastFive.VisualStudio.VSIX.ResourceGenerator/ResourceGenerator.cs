@@ -98,8 +98,8 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                 {
                     Func<ResourceInfo, bool> resourceTransfer = (resourceInfo) =>
                     {
-                        var asdf = resourceInfo.APIProjectName + "   " + resourceInfo.BusinessProjectName + "   " + resourceInfo.PersistenceProjectName + "   " + resourceInfo.APITestProjectName;
-                        MsgBox("Returned resource info", asdf);
+                        var projectInfo = resourceInfo.APIProjectName + "   " + resourceInfo.BusinessProjectName + "   " + resourceInfo.PersistenceProjectName + "   " + resourceInfo.APITestProjectName;
+                        MsgBox("Returned resource info", projectInfo);
 
                         GetTemplateFilePath(
                             (templateFilePath) =>
@@ -126,7 +126,8 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                     };
 
                     var projectNames = projectInfos.Select(x => x.Name).ToArray();
-                    var frm = new ResourceDetailsForm(projectNames, resourceTransfer);
+                    var suggestedProjectNames = GetSuggestedProjectNames(projectNames);
+                    var frm = new ResourceDetailsForm(projectNames, suggestedProjectNames, resourceTransfer);
                     frm.ShowDialog();
                     return true;
                 },
@@ -134,6 +135,37 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                 {
                     return false;
                 });
+        }
+
+        private IDictionary<string, string> GetSuggestedProjectNames(string[] projectNames)
+        {
+            // This is a super kludge, but we don't have a distinct name for our biz layers on which to match
+            var shortestCount = 9999;
+            var business = string.Empty;
+            foreach(var projectName in projectNames)
+            {
+                if (projectName.StartsWith("EastFive"))
+                    continue;
+
+                if (projectName.StartsWith("BlackBarLabs"))
+                    continue;
+
+                if (projectName.Length < shortestCount)
+                {
+                    business = projectName;
+                    shortestCount = projectName.Length;
+                }
+            }
+            var api = projectNames.FirstOrDefault(name => name.EndsWith(".Api"));
+            var persistence = projectNames.FirstOrDefault(name => name.EndsWith(".Persistence.Azure"));
+            var test = projectNames.FirstOrDefault(name => name.EndsWith(".Api.Tests"));
+            return new Dictionary<string, string>
+            {
+                { "api", api },
+                { "business", business },
+                { "persistence", persistence },
+                { "test", test }
+            };
         }
 
         private TResult GetProjectInfos<TResult>(
@@ -177,21 +209,137 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                 return GetSubstitutions(resourceInfo,
                     (substitutions) =>
                     {
-                        //API
                         var outputApiPath = Path.GetDirectoryName(projectInfos.First(x => x.Name == resourceInfo.APIProjectName).FullName);
-                        var outputControllerPath = Path.Combine(outputApiPath, $"Controllers\\{resourceInfo.ResourceName}Controller.cs");
-                        var controllerTemplatePath = Path.Combine(templateFilePath, "FileTemplates\\API\\Controllers\\Controller.txt");
-                        WriteFileFromTemplate(controllerTemplatePath, outputControllerPath, substitutions,
+                        var outputBusinessPath = Path.GetDirectoryName(projectInfos.First(x => x.Name == resourceInfo.BusinessProjectName).FullName);
+                        var outputPersistencePath = Path.GetDirectoryName(projectInfos.First(x => x.Name == resourceInfo.PersistenceProjectName).FullName);
+                        var outputApiTestPath = Path.GetDirectoryName(projectInfos.First(x => x.Name == resourceInfo.APITestProjectName).FullName);
+
+                        //API\Controllers\<Controller>.cs
+                        var outputPath = Path.Combine(outputApiPath, $"Controllers\\{resourceInfo.ResourceName}Controller.cs");
+                        var templatePath = Path.Combine(templateFilePath, "FileTemplates\\API\\Controllers\\Controller.txt");
+                        WriteFileFromTemplate(templatePath, outputPath, substitutions, resourceInfo,
                             ()=>
                             {
-                                AddFileToProject(projectInfos.First(x => x.Name == resourceInfo.APIProjectName), outputControllerPath);
+                                AddFileToProject(projectInfos.First(x => x.Name == resourceInfo.APIProjectName), outputPath);
                                 return true;
                             },
                             ()=>
                             {
                                 return false;
                             });
-            
+
+                        //API\Resources\Resource.cs
+                        outputPath = Path.Combine(outputApiPath, $"Resources\\{resourceInfo.ResourceName}\\{resourceInfo.ResourceName}.cs");
+                        templatePath = Path.Combine(templateFilePath, "FileTemplates\\API\\Resources\\ResourceName\\Resource.txt");
+                        WriteFileFromTemplate(templatePath, outputPath, substitutions, resourceInfo,
+                            () =>
+                            {
+                                AddFileToProject(projectInfos.First(x => x.Name == resourceInfo.APIProjectName), outputPath);
+                                return true;
+                            },
+                            () =>
+                            {
+                                return false;
+                            });
+
+                        //API\Resources\ResourceActions.cs
+                        outputPath = Path.Combine(outputApiPath, $"Resources\\{resourceInfo.ResourceName}\\{resourceInfo.ResourceName}Actions.cs");
+                        templatePath = Path.Combine(templateFilePath, "FileTemplates\\API\\Resources\\ResourceName\\ResourceActions.txt");
+                        WriteFileFromTemplate(templatePath, outputPath, substitutions, resourceInfo,
+                            () =>
+                            {
+                                AddFileToProject(projectInfos.First(x => x.Name == resourceInfo.APIProjectName), outputPath);
+                                return true;
+                            },
+                            () =>
+                            {
+                                return false;
+                            });
+
+                        //API\Resources\ResourceOptions.cs
+                        outputPath = Path.Combine(outputApiPath, $"Resources\\{resourceInfo.ResourceName}\\{resourceInfo.ResourceName}Options.cs");
+                        templatePath = Path.Combine(templateFilePath, "FileTemplates\\API\\Resources\\ResourceName\\ResourceOptions.txt");
+                        WriteFileFromTemplate(templatePath, outputPath, substitutions, resourceInfo,
+                            () =>
+                            {
+                                AddFileToProject(projectInfos.First(x => x.Name == resourceInfo.APIProjectName), outputPath);
+                                return true;
+                            },
+                            () =>
+                            {
+                                return false;
+                            });
+
+                        //Business\Business.cs
+                        outputPath = Path.Combine(outputBusinessPath, $"{resourceInfo.ResourceNamePlural}.cs");
+                        templatePath = Path.Combine(templateFilePath, "FileTemplates\\Business\\Business.txt");
+                        WriteFileFromTemplate(templatePath, outputPath, substitutions, resourceInfo,
+                            () =>
+                            {
+                                AddFileToProject(projectInfos.First(x => x.Name == resourceInfo.BusinessProjectName), outputPath);
+                                return true;
+                            },
+                            () =>
+                            {
+                                return false;
+                            });
+
+                        //Persistence\Persistence.cs
+                        outputPath = Path.Combine(outputPersistencePath, $"{resourceInfo.ResourceNamePlural}.cs");
+                        templatePath = Path.Combine(templateFilePath, "FileTemplates\\Persistence\\Persistence.txt");
+                        WriteFileFromTemplate(templatePath, outputPath, substitutions, resourceInfo,
+                            () =>
+                            {
+                                AddFileToProject(projectInfos.First(x => x.Name == resourceInfo.PersistenceProjectName), outputPath);
+                                return true;
+                            },
+                            () =>
+                            {
+                                return false;
+                            });
+
+                        //Persistence\Documents\Document.cs
+                        outputPath = Path.Combine(outputPersistencePath, $"Documents\\{resourceInfo.ResourceName}Document.cs");
+                        templatePath = Path.Combine(templateFilePath, "FileTemplates\\Persistence\\Documents\\Document.txt");
+                        WriteFileFromTemplate(templatePath, outputPath, substitutions, resourceInfo,
+                            () =>
+                            {
+                                AddFileToProject(projectInfos.First(x => x.Name == resourceInfo.PersistenceProjectName), outputPath);
+                                return true;
+                            },
+                            () =>
+                            {
+                                return false;
+                            });
+
+                        //Api.Test\CRUD\CRUD.cs
+                        outputPath = Path.Combine(outputApiTestPath, $"CRUD\\{resourceInfo.ResourceName}.cs");
+                        templatePath = Path.Combine(templateFilePath, "FileTemplates\\Test\\CRUD\\CRUD.txt");
+                        WriteFileFromTemplate(templatePath, outputPath, substitutions, resourceInfo,
+                            () =>
+                            {
+                                AddFileToProject(projectInfos.First(x => x.Name == resourceInfo.APITestProjectName), outputPath);
+                                return true;
+                            },
+                            () =>
+                            {
+                                return false;
+                            });
+
+                        //Api.Test\Helpers\ResourceHelper.cs
+                        outputPath = Path.Combine(outputApiTestPath, $"Helpers\\{resourceInfo.ResourceName}Helpers.cs");
+                        templatePath = Path.Combine(templateFilePath, "FileTemplates\\Test\\Helpers\\ResourceHelper.txt");
+                        WriteFileFromTemplate(templatePath, outputPath, substitutions, resourceInfo,
+                            () =>
+                            {
+                                AddFileToProject(projectInfos.First(x => x.Name == resourceInfo.APITestProjectName), outputPath);
+                                return true;
+                            },
+                            () =>
+                            {
+                                return false;
+                            });
+
                         return onSuccess();
                     },
                     () =>
@@ -217,9 +365,24 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
         {
             try
             {
-                var subs = new Dictionary<string, string>();
-                subs.Add("{{resource_name}}", resourceInfo.ResourceName);
-                subs.Add("{{resource_name_plural}}", resourceInfo.ResourceNamePlural);
+                var subs = new Dictionary<string, string>
+                {
+                    { "{{resource_name}}", resourceInfo.ResourceName },
+                    { "{{resource_name_plural}}", resourceInfo.ResourceNamePlural },
+                    { "{{resource_name_variable}}", resourceInfo.ResourceNameVariable },
+                    { "{{project_namespace_api}}", resourceInfo.APIProjectName  },
+                    { "{{project_namespace_business}}", resourceInfo.BusinessProjectName  },
+                    { "{{project_namespace_persistence}}", resourceInfo.PersistenceProjectName  },
+                    { "{{project_namespace_test}}", resourceInfo.APITestProjectName  },
+
+
+                };
+
+                subs.Add("{{api_resource_definition}}", GetResourceDefinition(resourceInfo));
+                subs.Add("{{persistence_document_definition}}", GetDocumentDefinition(resourceInfo));
+
+
+
                 return onSuccess(subs);
             }
             catch (Exception ex)
@@ -229,13 +392,54 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
             }
         }
 
-        private TResult WriteFileFromTemplate<TResult>(string templateFilePath, string outputFilePath, IDictionary<string, string> substitutions,
+        private string GetResourceDefinition(ResourceInfo resourceInfo)
+        {
+            var resourceDefinition = string.Empty;
+
+            foreach(var parameter in resourceInfo.ParameterInfos)
+            {
+                resourceDefinition += "\n";
+                resourceDefinition += "\t\t";
+                resourceDefinition += $"[JsonProperty(PropertyName = \"{parameter.ParameterNameJson}\")]";
+                resourceDefinition += "\n";
+                resourceDefinition += "\t\t";
+                resourceDefinition += $"public {parameter.Type} {parameter.Name} ";
+                resourceDefinition += "{ get; set; }";
+            }
+
+            return resourceDefinition;
+        }
+
+        private string GetDocumentDefinition(ResourceInfo resourceInfo)
+        {
+            var documentDefinition = string.Empty;
+
+            foreach (var parameter in resourceInfo.ParameterInfos)
+            {
+                documentDefinition += "\n";
+                documentDefinition += "\t\t";
+                documentDefinition += $"public {parameter.Type} {parameter.Name} ";
+                documentDefinition += "{ get; set; }";
+            }
+
+            return documentDefinition;
+        }
+
+
+        private TResult WriteFileFromTemplate<TResult>(string templateFilePath, string outputFilePath, 
+                IDictionary<string, string> substitutions, ResourceInfo resourceInfo,
             Func<TResult> onSuccess,
             Func<TResult> onError)
         {
             try
             {
                 MsgBox("WriteFileFromTemplate", $"templateFilePath: {templateFilePath}     outputFilePath: {outputFilePath}");
+                var subInfo = "SubstitutionInfo---    ";
+                foreach (var substitution in substitutions)
+                {
+                    subInfo += $"{substitution.Key} : {substitution.Value}";
+                }
+                MsgBox("WriteFileFromTemplate", subInfo);
 
                 using (TextReader reader = File.OpenText(templateFilePath))
                 {
@@ -245,6 +449,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                         templateText = templateText.Replace(substitution.Key, substitution.Value);
                     }
 
+                    Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
                     using (var writer = new StreamWriter(outputFilePath))
                     {
                         writer.Write(templateText);

@@ -1,0 +1,113 @@
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using {{project_namespace_persistence}}.Documents;
+using BlackBarLabs.Collections.Async;
+using BlackBarLabs.Extensions;
+using BlackBarLabs.Persistence.Azure.StorageTables;
+using Microsoft.WindowsAzure.Storage.Table;
+using BlackBarLabs.Persistence.Azure;
+
+namespace {{project_namespace_persistence}}
+{
+    public delegate T {{resource_name}}PersistenceDelegate<T>(Guid id, string name);
+    public delegate T Create{{resource_name}}Delegate<T>(Action Rollback);
+    public delegate Task Update{{resource_name}}SaveDelegate(string name);
+    public delegate Task<TResult> Update{{resource_name}}Delegate<TResult>(Guid {{resource_name_variable}}Id, string name, Update{{resource_name}}SaveDelegate save);
+
+    public class {{resource_name_plural}}
+    {
+        private readonly AzureStorageRepository azureStorageRepository;
+        private DataContext dataContext;
+
+        internal {{resource_name_plural}}(DataContext dataContext)
+        {
+            this.dataContext = dataContext;
+            this.azureStorageRepository = dataContext.AzureStorageRepository;
+        }
+
+        public async Task<TResult> Create{{resource_name}}Async<TResult>(Guid id, string name,
+            Func<TResult> onSuccess,
+            Func<TResult> onUsernameAlreadyExist)
+        {
+            var document = new {{resource_name}}Document()
+            {
+                Name = name
+            };
+            return await this.azureStorageRepository.CreateAsync(id, document,
+                () =>
+                {
+                    var result = onSuccess();
+                    return result;
+                },
+                () => onUsernameAlreadyExist());
+        }
+
+        public async Task<TResult> Find{{resource_name}}ByIdAsync<TResult>(Guid id,
+            Func<{{resource_name}}Info, TResult> onFound,
+            Func<TResult> notFound)
+        {
+            return await this.azureStorageRepository.FindByIdAsync<{{resource_name}}Document, TResult>(id,
+                ({{resource_name_variable}}Doc) => onFound(Convert({{resource_name_variable}}Doc)),
+                () => notFound());
+        }
+
+        private {{resource_name}}Info Convert ({{resource_name}}Document doc)
+        {
+            return new {{resource_name}}Info
+            {
+                Id = doc.Id,
+                Name = doc.Name
+            };
+        }
+
+        public struct {{resource_name}}Info
+        {
+            public Guid Id;
+            public string Name;
+        }
+
+        public async Task<T> GetAllAsync<T>(
+               Func<{{resource_name}}Info[], T> found)
+        {
+            var {{resource_name_variable}}Document = this.azureStorageRepository.FindAllAsync<{{resource_name}}Document>();
+            var results = {{resource_name_variable}}Document
+                .ToEnumerable(
+                    ({{resource_name}}Document {{resource_name_variable}}Document) =>
+                        new {{resource_name}}Info
+                        {
+                            Id = {{resource_name_variable}}Document.Id,
+                            Name = {{resource_name_variable}}Document.Name
+                        })
+                .ToArray();
+            return found(results);
+        }
+
+        public async Task<TResult> UpdateAsync<TResult>(Guid {{resource_name_variable}}Id, Update{{resource_name}}Delegate<TResult> success, Func<TResult> notFound)
+        {
+            return await this.azureStorageRepository.UpdateAsync<{{resource_name}}Document, TResult>({{resource_name_variable}}Id,
+                async (document, save) =>
+                {
+                    return await success(document.Id, document.Name,
+                        async (name) =>
+                        {
+                            document.Name = name;
+                            await save(document);
+                        });
+                },
+                () => notFound());
+        }
+
+        public async Task<TResult> DeleteAsync<TResult>(Guid id,
+            Func<TResult> success, Func<TResult> notFound)
+        {
+            return await this.azureStorageRepository.DeleteIfAsync<{{resource_name}}Document, TResult>(id,
+                async (doc, delete{{resource_name}}Doc) =>
+                {
+                    await delete{{resource_name}}Doc();
+                    return success();
+                },
+                () => notFound());
+        }
+    }
+}

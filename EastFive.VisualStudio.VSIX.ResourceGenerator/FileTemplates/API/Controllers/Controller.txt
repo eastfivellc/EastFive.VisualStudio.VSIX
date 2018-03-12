@@ -3,10 +3,10 @@ using System.Net.Http;
 using System.Web.Http;
 using System.Threading.Tasks;
 using BlackBarLabs.Api;
-using {{project_namespace}}.Actions;
-using {{project_namespace}}.Resources;
+using {{project_namespace_api}}.Actions;
+using {{project_namespace_api}}.Resources;
 
-namespace {{project_namespace}}.Controllers
+namespace {{project_namespace_api}}.Controllers
 {
     [System.Web.Http.RoutePrefix("api/{{resource_name}}")]
     public class {{resource_name}}Controller : BaseController

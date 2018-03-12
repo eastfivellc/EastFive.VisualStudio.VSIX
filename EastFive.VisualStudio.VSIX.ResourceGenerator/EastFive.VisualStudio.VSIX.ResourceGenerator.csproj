@@ -58,6 +58,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Compile Include="ParameterInfo.cs" />
     <Compile Include="ResourceInfo.cs" />
     <Compile Include="ResourceGenerator.cs" />
     <Compile Include="ResourceGeneratorPackage.cs" />
@@ -69,6 +70,38 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VSIXHelper.cs" />
+    <Content Include="FileTemplates\API\Resources\ResourceName\ResourceOptions.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="FileTemplates\API\Resources\ResourceName\ResourceActions.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="FileTemplates\API\Resources\ResourceName\Resource.txt">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="FileTemplates\Business\Business.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="FileTemplates\Persistence\Documents\Document.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="FileTemplates\Persistence\Persistence.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="FileTemplates\Test\CRUD\CRUD.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+    <Content Include="FileTemplates\Test\Helpers\ResourceHelper.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <Content Include="templates.pkgdef">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
@@ -203,13 +236,7 @@
     <Content Include="Resources\ResourceGeneratorOld.png" />
     <Content Include="Resources\ResourceGeneratorPackage.ico" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="FileTemplates\API\Resources\" />
-    <Folder Include="FileTemplates\Business\" />
-    <Folder Include="FileTemplates\Persistence\Documents\" />
-    <Folder Include="FileTemplates\Test\CRUD\" />
-    <Folder Include="FileTemplates\Test\Helpers\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
   <Import Project="..\packages\Microsoft.VisualStudio.SDK.EmbedInteropTypes.15.0.10\build\Microsoft.VisualStudio.SDK.EmbedInteropTypes.targets" Condition="Exists('..\packages\Microsoft.VisualStudio.SDK.EmbedInteropTypes.15.0.10\build\Microsoft.VisualStudio.SDK.EmbedInteropTypes.targets')" />

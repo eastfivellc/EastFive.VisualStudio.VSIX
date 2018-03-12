@@ -1,0 +1,31 @@
+﻿using System;
+using System.Net.Http;
+using BlackBarLabs.Api;
+using BlackBarLabs.Extensions;
+using System.Threading.Tasks;
+
+namespace {{project_namespace_api}}.Resources
+{
+    public static class {{resource_name}}Options
+    {
+        public static Task<HttpResponseMessage> GetOptions(HttpRequestMessage request,
+            Func<bool, bool, bool, bool, HttpResponseMessage> optionsFound)
+        {
+			return optionsFound(
+                        true,
+                        true,
+                        true,
+                        true).ToTask();
+            //return request.GetClaimsAsync(
+                //(claims) =>
+                //{
+                    //var isSiteAdmin = claims.IsSiteAdmin();
+                    //return optionsFound(
+                        //isSiteAdmin,
+                        //isSiteAdmin,
+                        //isSiteAdmin,
+                        //isSiteAdmin).ToTask();
+                //});
+        }
+    }
+}

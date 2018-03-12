@@ -1,0 +1,138 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using AffirmHealth.PDMS.Persistence.Azure;
+using BlackBarLabs.Api;
+
+namespace {{project_namespace_business}}
+{
+    public class {{resource_name_plural}}
+    {
+        private Context context;
+        private readonly DataContext dataContext;
+
+        public {{resource_name_plural}}(Context context, DataContext dataContext)
+        {
+            this.context = context;
+            this.dataContext = dataContext;
+        }
+
+        public async Task<T> Create{{resource_name}}Async<T>(Guid {{resource_name_variable}}Id,
+            string name,
+            IEnumerable<System.Security.Claims.Claim> claims,
+            Func<T> onSuccess,
+            Func<string, T> unauthorized,
+            Func<T> on{{resource_name}}CreateFailed)
+        {
+            claims = claims.ToList();
+            //if (!claims.IsSiteAdmin() && !claims.IsPracticeAdmin())
+            //   return unauthorized("Only site administrator or practice admin can create {{resource_name_variable}}");
+
+            return await dataContext.{{resource_name_plural}}.Create{{resource_name}}Async({{resource_name_variable}}Id, name,
+                () =>
+                {
+                    return onSuccess();
+                },
+                () => on{{resource_name}}CreateFailed());
+        }
+
+        public async Task<T> Create{{resource_name}}Async<T>(Guid {{resource_name_variable}}Id,
+            string name,
+            Func<T> onSuccess,
+            Func<T> onUsernameAlreadyExists)
+        {
+            return await dataContext.{{resource_name_plural}}.Create{{resource_name}}Async({{resource_name_variable}}Id, name,
+                () =>
+                {
+                    return onSuccess();
+                },
+                () => onUsernameAlreadyExists());
+        }
+
+        public async Task<T> Update{{resource_name}}Async<T>(Guid {{resource_name_variable}}Id, string name,
+                IEnumerable<System.Security.Claims.Claim> claims,
+            Func<T> success, 
+            Func<T> onNotFound, 
+            Func<string, T> failure,
+            Func<string, T> unauthorized)
+        {
+            claims = claims.ToList();
+            //if (!claims.IsSiteAdmin() && !claims.IsPracticeAdmin())
+            //    return unauthorized("Only site administrator or practice admin can update {{resource_name_variable}}");
+
+            return await dataContext.{{resource_name_plural}}.UpdateAsync({{resource_name_variable}}Id,
+                async ({{resource_name_variable}}IdStorage, nameStorage, update) =>
+                {
+                    await update(name);
+                    return success();
+                },
+                () => onNotFound());
+        }
+
+        public async Task<T> FindByIdAsync<T>(Guid {{resource_name_variable}}Id, IEnumerable<System.Security.Claims.Claim> claims,
+            Func<{{resource_name}}Info, T> onFound,
+            Func<T> notFound,
+            Func<T> unauthorized)
+        {
+            return await claims.GetActorId(EastFive.Api.AppSettings.ActorIdClaimType,
+               async (acctId) =>
+               {
+                    return await dataContext.{{resource_name_plural}}.Find{{resource_name}}ByIdAsync<T>({{resource_name_variable}}Id,
+                       ({{resource_name_variable}}) =>
+                       {
+                           return onFound(Convert({{resource_name_variable}}));
+                       },
+                       () => notFound());
+               },
+               () => Task.FromResult(unauthorized()));
+        }
+        
+        public struct {{resource_name}}Info
+        {
+            public Guid Id;
+            public string Name;
+        }
+
+        private {{resource_name}}Info Convert (Persistence.Azure.{{resource_name_plural}}.{{resource_name}}Info {{resource_name_variable}})
+        {
+            return new {{resource_name}}Info
+            {
+                Id = {{resource_name_variable}}.Id,
+                Name = {{resource_name_variable}}.Name
+            };
+        }
+
+        public async Task<T> GetAllAsync<T>(
+            Guid actingAsId, IEnumerable<System.Security.Claims.Claim> claims,
+            Func<{{resource_name}}Info[], T> found)
+        {
+            var result = await dataContext.{{resource_name_plural}}.GetAllAsync(
+                ({{resource_name_variable}}s) =>
+                {
+                    var innerResult = {{resource_name_variable}}s.Select({{resource_name_variable}} =>
+                    {
+                        return Convert({{resource_name_variable}});
+                    });
+                    var array = innerResult.ToArray();
+                    return found(array);
+                });
+            return result;
+        }
+
+        public async Task<bool> Delete(Guid id,
+            EastFive.Security.SessionServer.Context identityService)
+        {
+            return await dataContext.{{resource_name_plural}}.DeleteAsync(id,
+                        () => true,
+                        () => false);
+        }
+
+        public async Task<TResult> DeleteAsync<TResult>(Guid id,
+            Func<TResult> onSuccess,
+            Func<TResult> onFailure)
+        {
+            return await dataContext.{{resource_name_plural}}.DeleteAsync(id, onSuccess, onFailure);
+        }
+    }
+}

@@ -1,0 +1,41 @@
+﻿using System;
+using System.Net;
+using System.Threading.Tasks;
+using {{project_namespace_persistence}}.Workflows;
+using BlackBarLabs.Api.Tests;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using {{project_namespace_test}}.Helpers;
+
+namespace {{project_namespace_persistence}}.CRUD
+{
+    [TestClass]
+    public class {{resource_name}}
+    {
+        [TestMethod]
+        public async Task CRUD_{{resource_name}}()
+        {
+            var id = Guid.NewGuid();
+            const string Name = "{{resource_name}}Name";
+
+            var sessionSuperAdmin = AdminWorkflows.GetSuperAdmin();
+
+            var response = await sessionSuperAdmin.{{resource_name}}PostAsync(id, Name);
+            Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
+
+            response = await sessionSuperAdmin.{{resource_name}}GetAsync(id);
+            Assert.IsTrue(response.StatusCode == HttpStatusCode.OK);
+            var item = response.GetContent<Api.Resources.{{resource_name}}>();
+
+            const string ModifiedName = "{{resource_name}}Name_Modified";
+            response = await sessionSuperAdmin.{{resource_name}}PutAsync(id, ModifiedName);
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+            response = await sessionSuperAdmin.{{resource_name}}GetAsync(id);
+            Assert.IsTrue(response.StatusCode == HttpStatusCode.OK);
+            res = response.GetContent<Api.Resources.{{resource_name}}>();
+            Assert.AreEqual(ModifiedName, res.Name);
+
+            response = await sessionSuperAdmin.{{resource_name}}DeleteAsync(id);
+            Assert.AreEqual(HttpStatusCode.NoContent, response.StatusCode);
+        }
+    }
+}

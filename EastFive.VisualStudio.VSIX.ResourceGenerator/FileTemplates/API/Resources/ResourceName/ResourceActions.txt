@@ -1,0 +1,135 @@
+﻿using BlackBarLabs.Api;
+using System;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using System.Web.Http.Routing;
+using {{project_namespace_api}}.Controllers;
+using {{project_namespace_api}}.Resources;
+
+namespace {{project_namespace_api}}.Actions
+{
+    public static class {{resource_name}}Actions
+    {
+        public static async Task<HttpResponseMessage> PostAsync(this Resources.{{resource_name}} {{resource_name_variable}},
+            HttpRequestMessage request, UrlHelper urlHelper)
+        {
+            var {{resource_name_variable}}Id = {{resource_name_variable}}.Id.ToGuid();
+            if (!{{resource_name_variable}}Id.HasValue)
+                return request.CreateResponseEmptyId({{resource_name_variable}}, a => a.Id);
+
+            return await request.GetClaimsAsync(
+                async (claims) =>
+                {
+                    var context = request.GetPDMSContext();
+                    var response = await context.{{resource_name_plural}}.Create{{resource_name}}Async({{resource_name_variable}}Id.Value, {{resource_name_variable}}.Name, claims,
+                        () =>
+                        {
+                            return request.CreateResponse(HttpStatusCode.Created);
+                        },
+                        (message) => request.CreateResponse(HttpStatusCode.Unauthorized).AddReason(message),
+                        () =>
+                        {
+                            return request.CreateResponse(HttpStatusCode.Conflict).AddReason("Create {{resource_name_variable}} failed");
+                        });
+                    return response;
+                });
+        }
+
+        public static async Task<HttpResponseMessage> GetAsync(this BlackBarLabs.Api.ResourceQueryBase query, HttpRequestMessage request, UrlHelper urlHelper)
+        {
+            var result = await request.GetActorIdClaimsAsync(
+                (actingAsId, claims) =>
+                {
+                    return query.ParseAsync(request,
+                        q => QueryByIdAsync(q.Id.ParamSingle(), actingAsId, claims, request, urlHelper),
+                        q => QueryAllAsync(actingAsId, claims, request, urlHelper));
+                });
+            return result;
+        }
+
+        private static async Task<HttpResponseMessage> QueryByIdAsync(Guid {{resource_name_variable}}Id, Guid actingAsId, Claim[] claims, HttpRequestMessage request, UrlHelper urlHelper)
+        {
+            var context = request.GetPDMSContext();
+            return await context.{{resource_name_plural}}.FindByIdAsync({{resource_name_variable}}Id, claims,
+                ({{resource_name_variable}}) =>
+                {
+                    var viewModel = new {{resource_name}}()
+                    {
+                        Id = urlHelper.GetWebId<{{resource_name}}Controller>({{resource_name_variable}}.Id),
+                        Name = {{resource_name_variable}}.Name
+                    };
+                    return request.CreateResponse(HttpStatusCode.OK, viewModel);
+                },
+                () => request.CreateResponseNotFound({{resource_name_variable}}Id),
+                () => request.CreateResponse(HttpStatusCode.Unauthorized));
+        }
+
+        private static async Task<HttpResponseMessage[]> QueryAllAsync(Guid actingAsId, Claim[] claims, HttpRequestMessage request, UrlHelper url)
+        {
+            var context = request.GetPDMSContext();
+            var result = await context.{{resource_name_plural}}
+                .GetAllAsync(actingAsId, claims,
+                    (items) =>
+                        items
+                            .Select(item =>
+                                GetResponse(request, url, item)));
+            return result.ToArray();
+        }
+
+        private static HttpResponseMessage GetResponse(HttpRequestMessage request, UrlHelper url, {{resource_name_plural}}.{{resource_name}}Info {{resource_name_variable}}Info)
+        {
+            var {{resource_name_variable}}Result = new {{resource_name}}()
+            {
+                Id = url.GetWebId<{{resource_name}}Controller>({{resource_name_variable}}Info.Id),
+                Name = {{resource_name_variable}}Info.Name
+            };
+            var response = request.CreateResponse(HttpStatusCode.OK, {{resource_name_variable}}Result);
+            response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/x-{{resource_name_variable}}+json");
+            return response;
+        }
+
+        public static async Task<HttpResponseMessage> PutAsync(this Resources.{{resource_name}} {{resource_name_variable}},
+            HttpRequestMessage request, UrlHelper urlHelper)
+        {
+            return await request.GetClaimsAsync(
+                async (claims) =>
+                {
+                    var {{resource_name_variable}}Id = {{resource_name_variable}}.Id.ToGuid();
+                    if (!{{resource_name_variable}}Id.HasValue)
+                        return request.CreateResponseEmptyId({{resource_name_variable}}, a => a.Id);
+
+                    var context = request.GetPDMSContext();
+                    return await context.{{resource_name_plural}}.Update{{resource_name}}Async({{resource_name_variable}}Id.Value, {{resource_name_variable}}.Name, claims,
+                        () => request.CreateResponse(HttpStatusCode.OK),
+                        () => request.CreateResponse(HttpStatusCode.NotFound),
+                        (message) => request.CreateResponse(HttpStatusCode.Conflict, message),
+                        (message) => request.CreateResponse(HttpStatusCode.Conflict, message));
+                });
+        }
+
+        public static async Task<HttpResponseMessage> DeleteAsync(this BlackBarLabs.Api.ResourceQueryBase query, HttpRequestMessage request, UrlHelper urlHelper)
+        {
+            var result = await request.GetClaimsAsync(
+                (claims) =>
+                {
+                    return query.ParseAsync(request,
+                        q => DeleteByIdAsync(q.Id.ParamSingle(), claims, request, urlHelper));
+                });
+            return result;
+        }
+
+        private async static Task<HttpResponseMessage> DeleteByIdAsync(Guid {{resource_name_variable}}Id, Claim[] claims, HttpRequestMessage request, UrlHelper urlHelper)
+        {
+            var context = request.GetPDMSContext();
+
+            if (await context.{{resource_name_plural}}.Delete({{resource_name_variable}}Id, request.GetIdentityServerContext()))
+                return request.CreateResponse(HttpStatusCode.NoContent);
+
+            return request.CreateResponse(HttpStatusCode.NotFound);
+        }
+    }
+}

@@ -1,0 +1,58 @@
+﻿using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+using AffirmHealth.PDMS.Api.Controllers;
+using BlackBarLabs.Api.Resources;
+using BlackBarLabs.Api.Tests;
+using {{project_namespace_api}}.Resources;
+
+namespace {{project_namespace_test}}.Helpers
+{
+    public static class {{resource_name}}Helpers
+    {
+        public static async Task<HttpResponseMessage> {{resource_name}}PostAsync(this ITestSession session,
+            Guid id, string name)
+        {
+            var createNotification = new Resources.{{resource_name}}()
+            {
+                Id = new WebId() {UUID = id},
+                Name = name
+            };
+            
+            var response = await session.PostAsync<{{resource_name}}Controller>(createNotification);
+            return response;
+        }
+
+        public static async Task<HttpResponseMessage> {{resource_name}}GetAsync(this ITestSession session, Guid id)
+        {
+            var query = new BlackBarLabs.Api.ResourceQueryBase() { Id = id };
+            var response = await session.GetAsync<{{resource_name}}Controller>(query);
+            return response;
+        }
+
+        public static async Task<HttpResponseMessage> {{resource_name}}GetAllAsync(this ITestSession session)
+        {
+            var query = new BlackBarLabs.Api.ResourceQueryBase() { };
+            var response = await session.GetAsync<{{resource_name}}Controller>(query);
+            return response;
+        }
+
+        public static async Task<HttpResponseMessage> {{resource_name}}PutAsync(this ITestSession session, Guid id, string name)
+        {
+            var {{resource_name_variable}} = new Resources.{{resource_name}}()
+            {
+                Id = new WebId() { UUID = id },
+                Name = name
+            };
+
+            var response = await session.PutAsync<{{resource_name}}Controller>({{resource_name_variable}});
+            return response;
+        }
+        public static async Task<HttpResponseMessage> {{resource_name}}DeleteAsync(this ITestSession session, Guid id)
+        {
+            var query = new BlackBarLabs.Api.ResourceQueryBase() { Id = id };
+            var response = await session.DeleteAsync<{{resource_name}}Controller>(query);
+            return response;
+        }
+    }
+}
