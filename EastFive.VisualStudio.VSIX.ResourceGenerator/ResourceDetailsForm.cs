@@ -40,6 +40,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
 
                 cboParameterType.Items.Add("string");
                 cboParameterType.Items.Add("int");
+                cboParameterType.Items.Add("double");
                 cboParameterType.Items.Add("DateTime");
                 cboParameterType.Items.Add("Guid");
                 cboParameterType.Items.Add("WebId");
