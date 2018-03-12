@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
@@ -91,120 +93,186 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
         /// <param name="e">Event args.</param>
         private void MenuItemCallback(object sender, EventArgs e)
         {
-            var solution = VsixHelper.Ide.Solution;
-            var projectNames = solution.GetProjects().Select(proj => proj.Name).OrderBy(x => x).ToArray();
+            var result = GetProjectInfos(
+                (projectInfos) =>
+                {
+                    Func<ResourceInfo, bool> resourceTransfer = (resourceInfo) =>
+                    {
+                        var asdf = resourceInfo.APIProjectName + "   " + resourceInfo.BusinessProjectName + "   " + resourceInfo.PersistenceProjectName + "   " + resourceInfo.APITestProjectName;
+                        MsgBox("Returned resource info", asdf);
 
-            Func<ResourceInfo, bool> resourceTransfer = (rsrc) =>
-            {
-                //WriteFile("EastFive.VisualStudio.VSIX.ResourceGenerator.FileTemplates.API.Controllers.Controller.txt",
-                //            "filepath", rsrc.APIProjectName);
+                        GetTemplateFilePath(
+                            (templateFilePath) =>
+                            {
+                                MsgBox("TemplateFilePath", templateFilePath);
 
-                var installationPath = GetAssemblyLocalPathFrom(typeof(ResourceGenerator));
-                var path = Path.GetDirectoryName(installationPath);
+                                WriteProjectFilesFromTemplates(templateFilePath, projectInfos, resourceInfo,
+                                    () =>
+                                    {
+                                        return true;
+                                    },
+                                    () =>
+                                    {
+                                        return false;
+                                    });
+                                return true;
 
-                var asdf = rsrc.APIProjectName + rsrc.BusinessProjectName + rsrc.PersistenceProjectName + rsrc.APITestProjectName;
-                VsShellUtilities.ShowMessageBox(
-                    this.ServiceProvider,
-                    installationPath,
-                    rsrc.ResourceName,
-                    OLEMSGICON.OLEMSGICON_INFO,
-                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                            },
+                            () =>
+                            {
+                                return false;
+                            });
+                        return true;
+                    };
 
-                //File.Create(@"c:\temp\testResource.txt");
-
-                return true;
-            };
-
-            var frm = new ResourceDetailsForm(projectNames, resourceTransfer);
-            frm.ShowDialog();
-
+                    var projectNames = projectInfos.Select(x => x.Name).ToArray();
+                    var frm = new ResourceDetailsForm(projectNames, resourceTransfer);
+                    frm.ShowDialog();
+                    return true;
+                },
+                () =>
+                {
+                    return false;
+                });
         }
 
-        private void WriteFile(string resourceName, string filePath, string projectNamespace)
+        private TResult GetProjectInfos<TResult>(
+            Func<EnvDTE.Project[], TResult> onSuccess,
+            Func<TResult> onError)
         {
             try
             {
-                // Get current assembly
-                var assembly = Assembly.GetExecutingAssembly();
+                var solution = VsixHelper.Ide.Solution;
+                var projects = solution.GetProjects().OrderBy(x => x.Name).ToArray();
+                return onSuccess(projects);
+            }
+            catch(Exception ex)
+            {
+                return onError();
+            }
+        }
 
-                string template = String.Empty;
+        private TResult GetTemplateFilePath<TResult>(
+            Func<string, TResult> onFoundPath,
+            Func<TResult> onError)
+        {
+            try
+            {
+                var installationPath = GetAssemblyLocalPathFrom(typeof(ResourceGenerator));
+                var path = Path.GetDirectoryName(installationPath);
+                return onFoundPath(path);
+            }
+            catch(Exception ex)
+            {
+                return onError();
+            }
+        }
 
-                using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
-                using (var reader = new StreamReader(stream))
-                {
-                    template = reader.ReadToEnd();
-                    template
-                        .Replace("{{project_namespace}}", projectNamespace)
-                        .Replace("{{resource_name}}", resourceName);
-
-                    // Write data in the new text file
-                    filePath = "C:\\temp\\myFileName.cs";
-                    using (TextWriter writer = File.CreateText(filePath))
+        private TResult WriteProjectFilesFromTemplates<TResult>(string templateFilePath, Project[] projectInfos, ResourceInfo resourceInfo,
+            Func<TResult> onSuccess,
+            Func<TResult> onError)
+        {
+            try
+            {
+                return GetSubstitutions(resourceInfo,
+                    (substitutions) =>
                     {
-                        writer.WriteLine(template);
-                    }
-                }
+                        //API
+                        var outputApiPath = Path.GetDirectoryName(projectInfos.First(x => x.Name == resourceInfo.APIProjectName).FullName);
+                        var outputControllerPath = Path.Combine(outputApiPath, $"Controllers\\{resourceInfo.ResourceName}Controller.cs");
+                        var controllerTemplatePath = Path.Combine(templateFilePath, "FileTemplates\\API\\Controllers\\Controller.txt");
+                        WriteFileFromTemplate(controllerTemplatePath, outputControllerPath, substitutions,
+                            ()=>
+                            {
+                                AddFileToProject(projectInfos.First(x => x.Name == resourceInfo.APIProjectName), outputControllerPath);
+                                return true;
+                            },
+                            ()=>
+                            {
+                                return false;
+                            });
+            
+                        return onSuccess();
+                    },
+                    () =>
+                    {
+                        return onError();
+                    });
+            }
+            catch(Exception ex)
+            {
+                MsgBox("Error in WriteProjectFilesFromTemplates", ex.Message);
+                return onError();
+            }
+        }
+
+        private void AddFileToProject(Project project, string filePath)
+        {
+            project.ProjectItems.AddFromFile(filePath);
+        }
+
+        private TResult GetSubstitutions<TResult>(ResourceInfo resourceInfo,
+            Func<IDictionary<string, string>, TResult> onSuccess,
+            Func<TResult> onError)
+        {
+            try
+            {
+                var subs = new Dictionary<string, string>();
+                subs.Add("{{resource_name}}", resourceInfo.ResourceName);
+                subs.Add("{{resource_name_plural}}", resourceInfo.ResourceNamePlural);
+                return onSuccess(subs);
             }
             catch (Exception ex)
             {
-                var names = Assembly.GetExecutingAssembly().GetManifestResourceNames();
-                var namesStr = string.Empty;
-                foreach(var name in names)
-                {
-                    namesStr += name;
-                }
-
-                VsShellUtilities.ShowMessageBox(
-                   this.ServiceProvider,
-                   namesStr,
-                   "Error",
-                   OLEMSGICON.OLEMSGICON_INFO,
-                   OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                   OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                MsgBox("GetSubstitutions", ex.Message);
+                return onError();
             }
+        }
 
+        private TResult WriteFileFromTemplate<TResult>(string templateFilePath, string outputFilePath, IDictionary<string, string> substitutions,
+            Func<TResult> onSuccess,
+            Func<TResult> onError)
+        {
+            try
+            {
+                MsgBox("WriteFileFromTemplate", $"templateFilePath: {templateFilePath}     outputFilePath: {outputFilePath}");
 
+                using (TextReader reader = File.OpenText(templateFilePath))
+                {
+                    string templateText = reader.ReadToEnd();
+                    foreach (var substitution in substitutions)
+                    {
+                        templateText = templateText.Replace(substitution.Key, substitution.Value);
+                    }
 
-            //// Read resource from assembly
-            //using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-            //using (TextReader reader = new TextReader(stream))
-            //{
-            //    template = reader.ReadToEnd();
-            //    template
-            //        .Replace("{{project_namespace}}", projectNamespace)
-            //        .Replace("{{resource_name}}", resourceName);
+                    using (var writer = new StreamWriter(outputFilePath))
+                    {
+                        writer.Write(templateText);
+                    }
+                }
+                return onSuccess();
+            }
+            catch (Exception ex)
+            {
+                MsgBox("WriteFileFromTemplate", ex.Message);
+                return onError();
+            }
+        }
 
-            //    // Write data in the new text file
-            //    filePath = "C:\\temp\\myFileName.cs";
-            //    using (TextWriter writer = File.CreateText(filePath))
-            //    {
-            //        writer.WriteLine(template);
-            //    }
-            //}
-
-
-            ////Assembly assembly = Assembly.GetExecutingAssembly();
-            //Assembly a = Assembly.GetExecutingAssembly();
-            ////Stream stream = assembly.GetManifestResourceStream("Installer.Properties.mydll.dll"); // or whatever
-            ////string my_namespace = a.GetName().Name.ToString();
-            //Stream resFilestream = a.GetManifestResourceStream(resourceName);
-            //if (resFilestream != null)
-            //{
-            //    BinaryReader br = new BinaryReader(resFilestream);
-            //    FileStream fs = new FileStream(location, FileMode.Create); // Say
-            //    BinaryWriter bw = new BinaryWriter(fs);
-            //    byte[] ba = new byte[resFilestream.Length];
-            //    resFilestream.Read(ba, 0, ba.Length);
-            //    bw.Write(ba);
-            //    br.Close();
-            //    bw.Close();
-            //    resFilestream.Close();
-
-
-
-
-            //}
+        /// <summary>
+        /// Message box, used primarily when debugging in a project that is not the VSIX project
+        /// </summary>
+        /// <param name="title"></param>
+        /// <param name="message"></param>
+        private void MsgBox(string title, string message)
+        {
+            VsShellUtilities.ShowMessageBox(
+                            this.ServiceProvider,
+                            message,
+                            title,
+                            OLEMSGICON.OLEMSGICON_INFO,
+                            OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                            OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
         }
 
         static string GetAssemblyLocalPathFrom(Type type)

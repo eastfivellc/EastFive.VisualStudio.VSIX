@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.txtResourceName = new System.Windows.Forms.TextBox();
-            this.button1 = new System.Windows.Forms.Button();
+            this.btnCreateResource = new System.Windows.Forms.Button();
             this.lblResourceName = new System.Windows.Forms.Label();
             this.lblResourceNamePlural = new System.Windows.Forms.Label();
             this.textBox1 = new System.Windows.Forms.TextBox();
@@ -42,30 +42,32 @@
             this.cboPersistence = new System.Windows.Forms.ComboBox();
             this.cboAPITest = new System.Windows.Forms.ComboBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.groupBox1.SuspendLayout();
+            this.groupBox2.SuspendLayout();
             this.SuspendLayout();
             // 
             // txtResourceName
             // 
-            this.txtResourceName.Location = new System.Drawing.Point(139, 14);
+            this.txtResourceName.Location = new System.Drawing.Point(135, 19);
             this.txtResourceName.Name = "txtResourceName";
             this.txtResourceName.Size = new System.Drawing.Size(212, 20);
             this.txtResourceName.TabIndex = 0;
             // 
-            // button1
+            // btnCreateResource
             // 
-            this.button1.Location = new System.Drawing.Point(612, 329);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(91, 49);
-            this.button1.TabIndex = 1;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.btnCreateResource.Location = new System.Drawing.Point(389, 354);
+            this.btnCreateResource.Name = "btnCreateResource";
+            this.btnCreateResource.Size = new System.Drawing.Size(114, 33);
+            this.btnCreateResource.TabIndex = 1;
+            this.btnCreateResource.Text = "Create Resource";
+            this.btnCreateResource.UseVisualStyleBackColor = true;
+            this.btnCreateResource.Click += new System.EventHandler(this.btnCreateResource_Click);
             // 
             // lblResourceName
             // 
             this.lblResourceName.AutoSize = true;
-            this.lblResourceName.Location = new System.Drawing.Point(14, 14);
+            this.lblResourceName.Location = new System.Drawing.Point(45, 22);
             this.lblResourceName.Name = "lblResourceName";
             this.lblResourceName.Size = new System.Drawing.Size(84, 13);
             this.lblResourceName.TabIndex = 2;
@@ -74,7 +76,7 @@
             // lblResourceNamePlural
             // 
             this.lblResourceNamePlural.AutoSize = true;
-            this.lblResourceNamePlural.Location = new System.Drawing.Point(14, 51);
+            this.lblResourceNamePlural.Location = new System.Drawing.Point(10, 56);
             this.lblResourceNamePlural.Name = "lblResourceNamePlural";
             this.lblResourceNamePlural.Size = new System.Drawing.Size(119, 13);
             this.lblResourceNamePlural.TabIndex = 4;
@@ -82,7 +84,7 @@
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(139, 48);
+            this.textBox1.Location = new System.Drawing.Point(135, 53);
             this.textBox1.Name = "textBox1";
             this.textBox1.Size = new System.Drawing.Size(212, 20);
             this.textBox1.TabIndex = 3;
@@ -165,38 +167,49 @@
             this.groupBox1.Controls.Add(this.cboBusiness);
             this.groupBox1.Controls.Add(this.lblPersistenceProject);
             this.groupBox1.Controls.Add(this.lblTestProject);
-            this.groupBox1.Location = new System.Drawing.Point(17, 90);
+            this.groupBox1.Location = new System.Drawing.Point(12, 12);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(491, 152);
             this.groupBox1.TabIndex = 13;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Projects";
             // 
+            // groupBox2
+            // 
+            this.groupBox2.Controls.Add(this.txtResourceName);
+            this.groupBox2.Controls.Add(this.lblResourceName);
+            this.groupBox2.Controls.Add(this.lblResourceNamePlural);
+            this.groupBox2.Controls.Add(this.textBox1);
+            this.groupBox2.Location = new System.Drawing.Point(12, 179);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(491, 160);
+            this.groupBox2.TabIndex = 14;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "Substitutions";
+            // 
             // ResourceDetailsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(521, 405);
+            this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.lblResourceNamePlural);
-            this.Controls.Add(this.textBox1);
-            this.Controls.Add(this.lblResourceName);
-            this.Controls.Add(this.button1);
-            this.Controls.Add(this.txtResourceName);
+            this.Controls.Add(this.btnCreateResource);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "ResourceDetailsForm";
             this.Text = "East Five Resource Generator";
-            this.Load += new System.EventHandler(this.ResourceDetailsForm_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox2.PerformLayout();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
 
         private System.Windows.Forms.TextBox txtResourceName;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button btnCreateResource;
         private System.Windows.Forms.Label lblResourceName;
         private System.Windows.Forms.Label lblResourceNamePlural;
         private System.Windows.Forms.TextBox textBox1;
@@ -209,5 +222,6 @@
         private System.Windows.Forms.ComboBox cboPersistence;
         private System.Windows.Forms.ComboBox cboAPITest;
         private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.GroupBox groupBox2;
     }
 }

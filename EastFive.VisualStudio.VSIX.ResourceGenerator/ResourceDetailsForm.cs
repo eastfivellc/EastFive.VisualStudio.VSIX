@@ -27,7 +27,8 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                 cboAPITest.Items.AddRange(projects);
             }
         }
-        private void button1_Click(object sender, EventArgs e)
+
+        private void btnCreateResource_Click(object sender, EventArgs e)
         {
             resourceTransfer(
                 new ResourceInfo
@@ -39,11 +40,6 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                     APITestProjectName = cboAPITest.SelectedItem.ToString()
                 });
             this.Close();
-        }
-
-        private void ResourceDetailsForm_Load(object sender, EventArgs e)
-        {
-
         }
     }
 }
