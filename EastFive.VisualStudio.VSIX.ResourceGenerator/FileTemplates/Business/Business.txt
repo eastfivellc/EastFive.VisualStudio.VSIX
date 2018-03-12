@@ -19,7 +19,6 @@ namespace {{project_namespace_business}}
         }
 
         public async Task<T> Create{{resource_name}}Async<T>(Guid {{resource_name_variable}}Id,
-            string name,
             IEnumerable<System.Security.Claims.Claim> claims,
             Func<T> onSuccess,
             Func<string, T> unauthorized,
@@ -29,7 +28,7 @@ namespace {{project_namespace_business}}
             //if (!claims.IsSiteAdmin() && !claims.IsPracticeAdmin())
             //   return unauthorized("Only site administrator or practice admin can create {{resource_name_variable}}");
 
-            return await dataContext.{{resource_name_plural}}.Create{{resource_name}}Async({{resource_name_variable}}Id, name,
+            return await dataContext.{{resource_name_plural}}.Create{{resource_name}}Async({{resource_name_variable}}Id, 
                 () =>
                 {
                     return onSuccess();
@@ -38,11 +37,10 @@ namespace {{project_namespace_business}}
         }
 
         public async Task<T> Create{{resource_name}}Async<T>(Guid {{resource_name_variable}}Id,
-            string name,
             Func<T> onSuccess,
             Func<T> onUsernameAlreadyExists)
         {
-            return await dataContext.{{resource_name_plural}}.Create{{resource_name}}Async({{resource_name_variable}}Id, name,
+            return await dataContext.{{resource_name_plural}}.Create{{resource_name}}Async({{resource_name_variable}}Id,
                 () =>
                 {
                     return onSuccess();
@@ -50,7 +48,7 @@ namespace {{project_namespace_business}}
                 () => onUsernameAlreadyExists());
         }
 
-        public async Task<T> Update{{resource_name}}Async<T>(Guid {{resource_name_variable}}Id, string name,
+        public async Task<T> Update{{resource_name}}Async<T>(Guid {{resource_name_variable}}Id,
                 IEnumerable<System.Security.Claims.Claim> claims,
             Func<T> success, 
             Func<T> onNotFound, 
@@ -62,9 +60,9 @@ namespace {{project_namespace_business}}
             //    return unauthorized("Only site administrator or practice admin can update {{resource_name_variable}}");
 
             return await dataContext.{{resource_name_plural}}.UpdateAsync({{resource_name_variable}}Id,
-                async ({{resource_name_variable}}IdStorage, nameStorage, update) =>
+                async ({{resource_name_variable}}IdStorage, update) =>
                 {
-                    await update(name);
+                    await update();
                     return success();
                 },
                 () => onNotFound());
@@ -91,7 +89,6 @@ namespace {{project_namespace_business}}
         public struct {{resource_name}}Info
         {
             public Guid Id;
-            public string Name;
         }
 
         private {{resource_name}}Info Convert (Persistence.Azure.{{resource_name_plural}}.{{resource_name}}Info {{resource_name_variable}})
@@ -99,7 +96,6 @@ namespace {{project_namespace_business}}
             return new {{resource_name}}Info
             {
                 Id = {{resource_name_variable}}.Id,
-                Name = {{resource_name_variable}}.Name
             };
         }
 

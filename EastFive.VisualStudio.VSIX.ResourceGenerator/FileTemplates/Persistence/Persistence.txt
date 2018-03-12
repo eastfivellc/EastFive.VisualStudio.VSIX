@@ -10,10 +10,10 @@ using BlackBarLabs.Persistence.Azure;
 
 namespace {{project_namespace_persistence}}
 {
-    public delegate T {{resource_name}}PersistenceDelegate<T>(Guid id, string name);
+    public delegate T {{resource_name}}PersistenceDelegate<T>(Guid id);
     public delegate T Create{{resource_name}}Delegate<T>(Action Rollback);
-    public delegate Task Update{{resource_name}}SaveDelegate(string name);
-    public delegate Task<TResult> Update{{resource_name}}Delegate<TResult>(Guid {{resource_name_variable}}Id, string name, Update{{resource_name}}SaveDelegate save);
+    public delegate Task Update{{resource_name}}SaveDelegate();
+    public delegate Task<TResult> Update{{resource_name}}Delegate<TResult>(Guid {{resource_name_variable}}Id, Update{{resource_name}}SaveDelegate save);
 
     public class {{resource_name_plural}}
     {
@@ -26,13 +26,12 @@ namespace {{project_namespace_persistence}}
             this.azureStorageRepository = dataContext.AzureStorageRepository;
         }
 
-        public async Task<TResult> Create{{resource_name}}Async<TResult>(Guid id, string name,
+        public async Task<TResult> Create{{resource_name}}Async<TResult>(Guid id, 
             Func<TResult> onSuccess,
             Func<TResult> onUsernameAlreadyExist)
         {
             var document = new {{resource_name}}Document()
             {
-                Name = name
             };
             return await this.azureStorageRepository.CreateAsync(id, document,
                 () =>
@@ -57,27 +56,24 @@ namespace {{project_namespace_persistence}}
             return new {{resource_name}}Info
             {
                 Id = doc.Id,
-                Name = doc.Name
             };
         }
 
         public struct {{resource_name}}Info
         {
             public Guid Id;
-            public string Name;
         }
 
         public async Task<T> GetAllAsync<T>(
                Func<{{resource_name}}Info[], T> found)
         {
-            var {{resource_name_variable}}Document = this.azureStorageRepository.FindAllAsync<{{resource_name}}Document>();
-            var results = {{resource_name_variable}}Document
+            var {{resource_name_variable}}Documents = this.azureStorageRepository.FindAllAsync<{{resource_name}}Document>();
+            var results = {{resource_name_variable}}Documents
                 .ToEnumerable(
                     ({{resource_name}}Document {{resource_name_variable}}Document) =>
                         new {{resource_name}}Info
                         {
                             Id = {{resource_name_variable}}Document.Id,
-                            Name = {{resource_name_variable}}Document.Name
                         })
                 .ToArray();
             return found(results);
@@ -88,10 +84,9 @@ namespace {{project_namespace_persistence}}
             return await this.azureStorageRepository.UpdateAsync<{{resource_name}}Document, TResult>({{resource_name_variable}}Id,
                 async (document, save) =>
                 {
-                    return await success(document.Id, document.Name,
-                        async (name) =>
+                    return await success(document.Id,
+                        async () =>
                         {
-                            document.Name = name;
                             await save(document);
                         });
                 },

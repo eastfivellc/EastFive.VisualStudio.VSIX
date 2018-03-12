@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 namespace {{project_namespace_api}}.Resources
 {
     [DataContract]
-    public class {{resource_name}} 
+    public class {{resource_name}}  : BlackBarLabs.Api.ResourceBase
     {
         {{api_resource_definition}}
     }

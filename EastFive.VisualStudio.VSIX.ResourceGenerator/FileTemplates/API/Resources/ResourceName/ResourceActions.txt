@@ -25,7 +25,7 @@ namespace {{project_namespace_api}}.Actions
                 async (claims) =>
                 {
                     var context = request.GetPDMSContext();
-                    var response = await context.{{resource_name_plural}}.Create{{resource_name}}Async({{resource_name_variable}}Id.Value, {{resource_name_variable}}.Name, claims,
+                    var response = await context.{{resource_name_plural}}.Create{{resource_name}}Async({{resource_name_variable}}Id.Value, claims,
                         () =>
                         {
                             return request.CreateResponse(HttpStatusCode.Created);
@@ -60,7 +60,6 @@ namespace {{project_namespace_api}}.Actions
                     var viewModel = new {{resource_name}}()
                     {
                         Id = urlHelper.GetWebId<{{resource_name}}Controller>({{resource_name_variable}}.Id),
-                        Name = {{resource_name_variable}}.Name
                     };
                     return request.CreateResponse(HttpStatusCode.OK, viewModel);
                 },
@@ -85,7 +84,6 @@ namespace {{project_namespace_api}}.Actions
             var {{resource_name_variable}}Result = new {{resource_name}}()
             {
                 Id = url.GetWebId<{{resource_name}}Controller>({{resource_name_variable}}Info.Id),
-                Name = {{resource_name_variable}}Info.Name
             };
             var response = request.CreateResponse(HttpStatusCode.OK, {{resource_name_variable}}Result);
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/x-{{resource_name_variable}}+json");
@@ -103,7 +101,7 @@ namespace {{project_namespace_api}}.Actions
                         return request.CreateResponseEmptyId({{resource_name_variable}}, a => a.Id);
 
                     var context = request.GetPDMSContext();
-                    return await context.{{resource_name_plural}}.Update{{resource_name}}Async({{resource_name_variable}}Id.Value, {{resource_name_variable}}.Name, claims,
+                    return await context.{{resource_name_plural}}.Update{{resource_name}}Async({{resource_name_variable}}Id.Value, claims,
                         () => request.CreateResponse(HttpStatusCode.OK),
                         () => request.CreateResponse(HttpStatusCode.NotFound),
                         (message) => request.CreateResponse(HttpStatusCode.Conflict, message),

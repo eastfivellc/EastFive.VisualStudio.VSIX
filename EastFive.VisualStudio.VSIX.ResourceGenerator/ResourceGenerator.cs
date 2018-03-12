@@ -115,8 +115,10 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                                     {
                                         return false;
                                     });
-                                return true;
 
+                                UpdateBusinessContext(resourceInfo, projectInfos);
+                                UpdatePersistenceContext(resourceInfo, projectInfos);
+                                return true;
                             },
                             () =>
                             {
@@ -125,16 +127,149 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                         return true;
                     };
 
+                    Func<string, string, bool> msgBox = (title, message) =>
+                    {
+                        AlertMsgBox(title, message);
+                        return true;
+                    };
+
                     var projectNames = projectInfos.Select(x => x.Name).ToArray();
                     var suggestedProjectNames = GetSuggestedProjectNames(projectNames);
-                    var frm = new ResourceDetailsForm(projectNames, suggestedProjectNames, resourceTransfer);
+                    var frm = new ResourceDetailsForm(projectNames, suggestedProjectNames, msgBox, resourceTransfer);
                     frm.ShowDialog();
+                    AlertMsgBox("Completed", "The resource has been created");
                     return true;
                 },
                 () =>
                 {
                     return false;
                 });
+        }
+
+        public void UpdatePersistenceContext(ResourceInfo resourceInfo, Project[] projectInfos)
+        {
+            var outputPersistencePath = Path.GetDirectoryName(projectInfos.First(x => x.Name == resourceInfo.PersistenceProjectName).FullName);
+            var contextFilePath = Path.Combine(outputPersistencePath, "DataContext.cs");
+            string text = File.ReadAllText(contextFilePath);
+
+            var index = text.LastIndexOf('}');
+            text = text.Remove(index, 1);
+            index = text.LastIndexOf('}');
+            text = text.Remove(index, 1);
+
+            text += "\n";
+            text += "\t\t";
+            text += $"private {resourceInfo.ResourceNamePlural} {resourceInfo.ResourceNameVariable}s = default({resourceInfo.ResourceNamePlural});";
+            text += "\n";
+            text += "\t\t\t";
+            text += $"public {resourceInfo.ResourceNamePlural} {resourceInfo.ResourceNamePlural}";
+            text += "\n";
+            text += "\t\t\t";
+            text += "{";
+            text += "\n";
+            text += "\t\t\t\t";
+            text += "get";
+            text += "\n";
+            text += "\t\t\t\t";
+            text += "{";
+            text += "\n";
+            text += "\t\t\t\t\t";
+            text += $"if (default({resourceInfo.ResourceNamePlural}) == {resourceInfo.ResourceNameVariable}s)";
+            text += "\n";
+            text += "\t\t\t\t\t\t";
+            text += $"{resourceInfo.ResourceNameVariable}s = new {resourceInfo.ResourceNamePlural}(this);";
+            text += "\n";
+            text += "\t\t\t\t\t";
+            text += $"return {resourceInfo.ResourceNameVariable}s;";
+            text += "\n";
+            text += "\t\t\t\t";
+            text += "}";
+            text += "\n";
+            text += "\t\t\t";
+            text += "}";
+            text += "\n";
+            text += "\t\t";
+            text += "}";
+            text += "\n";
+            text += "}";
+
+            /*
+             private CSMDRecordReviews appointmentReviews = default(CSMDRecordReviews);
+            public CSMDRecordReviews CSMDRecordReviews
+            {
+                get
+                {
+                    if (default(CSMDRecordReviews) == appointmentReviews)
+                        appointmentReviews = new CSMDRecordReviews(this);
+                    return appointmentReviews;
+                }
+            }
+            */
+
+
+            File.WriteAllText(contextFilePath, text);
+        }
+
+        public void UpdateBusinessContext(ResourceInfo resourceInfo, Project[] projectInfos)
+        {
+            var outputBusinessPath = Path.GetDirectoryName(projectInfos.First(x => x.Name == resourceInfo.BusinessProjectName).FullName);
+            var contextFilePath = Path.Combine(outputBusinessPath, "Context.cs");
+            string text = File.ReadAllText(contextFilePath);
+
+            var index = text.LastIndexOf('}');
+            text = text.Remove(index, 1);
+            index = text.LastIndexOf('}');
+            text = text.Remove(index, 1);
+
+            text += "\n";
+            text += "\t\t";
+            text += $"private {resourceInfo.ResourceNamePlural} {resourceInfo.ResourceNameVariable}s;";
+            text += "\n";
+            text += "\t\t\t";
+            text += $"public {resourceInfo.ResourceNamePlural} {resourceInfo.ResourceNamePlural}";
+            text += "\n";
+            text += "\t\t\t";
+            text += "{";
+            text += "\n";
+            text += "\t\t\t\t";
+            text += "get";
+            text += "\n";
+            text += "\t\t\t\t";
+            text += "{";
+            text += "\n";
+            text += "\t\t\t\t\t";
+            text += $"if (default({resourceInfo.ResourceNamePlural}) == {resourceInfo.ResourceNameVariable}s)";
+            text += "\n";
+            text += "\t\t\t\t\t\t";
+            text += $"{resourceInfo.ResourceNameVariable}s = new {resourceInfo.ResourceNamePlural}(this, DataContext);";
+            text += "\n";
+            text += "\t\t\t\t\t";
+            text += $"return {resourceInfo.ResourceNameVariable}s;";
+            text += "\n";
+            text += "\t\t\t\t";
+            text += "}";
+            text += "\n";
+            text += "\t\t\t";
+            text += "}";
+            text += "\n";
+            text += "\t\t";
+            text += "}";
+            text += "\n";
+            text += "}";
+
+            //private PracticeAdmins practiceAdmins;
+            //public PracticeAdmins PracticeAdmins
+            //{
+            //    get
+            //    {
+            //        if (default(PracticeAdmins) == practiceAdmins)
+            //            practiceAdmins = new PracticeAdmins(this, DataContext);
+            //        return practiceAdmins;
+            //    }
+            //}
+
+
+            File.WriteAllText(contextFilePath, text);
         }
 
         private IDictionary<string, string> GetSuggestedProjectNames(string[] projectNames)
@@ -405,6 +540,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                 resourceDefinition += "\t\t";
                 resourceDefinition += $"public {parameter.Type} {parameter.Name} ";
                 resourceDefinition += "{ get; set; }";
+                resourceDefinition += "\n";
             }
 
             return resourceDefinition;
@@ -420,6 +556,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                 documentDefinition += "\t\t";
                 documentDefinition += $"public {parameter.Type} {parameter.Name} ";
                 documentDefinition += "{ get; set; }";
+                documentDefinition += "\n";
             }
 
             return documentDefinition;
@@ -471,6 +608,15 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
         /// <param name="message"></param>
         private void MsgBox(string title, string message)
         {
+            return;
+            // Leave this return in unless debugging
+
+            AlertMsgBox(title, message);
+        }
+
+
+        private void AlertMsgBox(string title, string message)
+        {
             VsShellUtilities.ShowMessageBox(
                             this.ServiceProvider,
                             message,
@@ -479,6 +625,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                             OLEMSGBUTTON.OLEMSGBUTTON_OK,
                             OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
         }
+
 
         static string GetAssemblyLocalPathFrom(Type type)
         {

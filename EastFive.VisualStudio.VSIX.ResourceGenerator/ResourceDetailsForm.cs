@@ -13,12 +13,16 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
     public partial class ResourceDetailsForm : Form
     {
         Func<ResourceInfo, bool> resourceTransfer;
+        Func<string, string, bool> msgBox;
+
         private List<ParameterInfo> parameterInfos;
 
         public ResourceDetailsForm(string[] projects, IDictionary<string, string> suggestedProjectNames,
+            Func<string, string, bool> msgBox,
             Func<ResourceInfo, bool> resourceTransfer)
         {
             this.resourceTransfer = resourceTransfer;
+            this.msgBox = msgBox;
             InitializeComponent();
             parameterInfos = new List<ParameterInfo>();
 
@@ -61,6 +65,13 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
 
         private void btnAddParamter_Click(object sender, EventArgs e)
         {
+            if (txtParameterName.Text == "Id")
+            {
+                msgBox("Invalid Parameter", "The parameter \"Id\" is provided by default");
+                ClearParamFields();
+                return;
+            }
+
             var parameterInfo = new ParameterInfo
             {
                 Name = txtParameterName.Text,
@@ -74,6 +85,11 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
             var paramInfo = $"{parameterInfo.Type}    {parameterInfo.Name}    {parameterInfo.NameAsVariable}    {parameterInfo.NameAsVariablePlural}    {parameterInfo.ParameterNameJson}";
             lstParameterInfo.Items.Add(paramInfo);
 
+            ClearParamFields();
+        }
+
+        private void ClearParamFields()
+        {
             txtParameterName.Text = string.Empty;
             txtParameterNameVariable.Text = string.Empty;
             txtParameterNameVariablePlural.Text = string.Empty;

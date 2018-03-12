@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
-using {{project_namespace_persistence}}.Workflows;
+using {{project_namespace_test}}.Workflows;
 using BlackBarLabs.Api.Tests;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using {{project_namespace_test}}.Helpers;
@@ -31,8 +31,8 @@ namespace {{project_namespace_persistence}}.CRUD
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
             response = await sessionSuperAdmin.{{resource_name}}GetAsync(id);
             Assert.IsTrue(response.StatusCode == HttpStatusCode.OK);
-            res = response.GetContent<Api.Resources.{{resource_name}}>();
-            Assert.AreEqual(ModifiedName, res.Name);
+            //res = response.GetContent<Api.Resources.{{resource_name}}>();
+            //Assert.AreEqual(ModifiedName, res.Name);
 
             response = await sessionSuperAdmin.{{resource_name}}DeleteAsync(id);
             Assert.AreEqual(HttpStatusCode.NoContent, response.StatusCode);

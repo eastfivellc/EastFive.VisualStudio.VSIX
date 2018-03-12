@@ -16,7 +16,6 @@ namespace {{project_namespace_test}}.Helpers
             var createNotification = new Resources.{{resource_name}}()
             {
                 Id = new WebId() {UUID = id},
-                Name = name
             };
             
             var response = await session.PostAsync<{{resource_name}}Controller>(createNotification);
@@ -42,7 +41,6 @@ namespace {{project_namespace_test}}.Helpers
             var {{resource_name_variable}} = new Resources.{{resource_name}}()
             {
                 Id = new WebId() { UUID = id },
-                Name = name
             };
 
             var response = await session.PutAsync<{{resource_name}}Controller>({{resource_name_variable}});
