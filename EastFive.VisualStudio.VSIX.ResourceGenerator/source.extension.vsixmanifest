@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="59e1a351-b724-4e77-aa0e-ef21a23b474d" Version="1.4.28" Language="en-US" Publisher="East Five" />
+        <Identity Id="59e1a351-b724-4e77-aa0e-ef21a23b474d" Version="1.4.37" Language="en-US" Publisher="East Five" />
         <DisplayName>East Five Resource Generator</DisplayName>
         <Description xml:space="preserve">This extension builds out all of the structure needed to support an API resource from the API through persistence using East Five development patterns.  It also creates a CRUD test for the resource.</Description>
         <Icon>Resources\Icon.png</Icon>

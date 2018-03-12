@@ -70,6 +70,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
             {
                 msgBox("Invalid Parameter", "The parameter \"Id\" is provided by default");
                 ClearParamFields();
+                txtParameterName.Select();
                 return;
             }
 
@@ -87,6 +88,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
             lstParameterInfo.Items.Add(paramInfo);
 
             ClearParamFields();
+            txtParameterName.Select();
         }
 
         private void ClearParamFields()

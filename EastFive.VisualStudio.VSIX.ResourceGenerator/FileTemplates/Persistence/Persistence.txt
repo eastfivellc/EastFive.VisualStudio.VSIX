@@ -10,10 +10,10 @@ using BlackBarLabs.Persistence.Azure;
 
 namespace {{project_namespace_persistence}}
 {
-    public delegate T {{resource_name}}PersistenceDelegate<T>(Guid id);
+    public delegate T {{resource_name}}PersistenceDelegate<T>(Guid id{{persistence_params_with_types_with_comma_leader_id}}{{persistence_params_with_types_with_comma_leader}});
     public delegate T Create{{resource_name}}Delegate<T>(Action Rollback);
-    public delegate Task Update{{resource_name}}SaveDelegate();
-    public delegate Task<TResult> Update{{resource_name}}Delegate<TResult>(Guid {{resource_name_variable}}Id, Update{{resource_name}}SaveDelegate save);
+    public delegate Task Update{{resource_name}}SaveDelegate({{persistence_update_save_delegate}});
+    public delegate Task<TResult> Update{{resource_name}}Delegate<TResult>(Guid {{resource_name_variable}}Id{{persistence_params_with_types_with_comma_leader_id}}{{persistence_params_with_types_with_comma_leader}}, Update{{resource_name}}SaveDelegate save);
 
     public class {{resource_name_plural}}
     {
@@ -27,11 +27,14 @@ namespace {{project_namespace_persistence}}
         }
 
         public async Task<TResult> Create{{resource_name}}Async<TResult>(Guid id, 
+				{{persistence_params_with_types_with_comma_trailer_id}}
+				{{persistence_params_with_types_with_comma_trailer}}
             Func<TResult> onSuccess,
             Func<TResult> onUsernameAlreadyExist)
         {
             var document = new {{resource_name}}Document()
             {
+{{persistence_params_document_create}}
             };
             return await this.azureStorageRepository.CreateAsync(id, document,
                 () =>
@@ -56,12 +59,14 @@ namespace {{project_namespace_persistence}}
             return new {{resource_name}}Info
             {
                 Id = doc.Id,
+{{persistence_params_convert_params}}
             };
         }
 
         public struct {{resource_name}}Info
         {
             public Guid Id;
+{{persistence_params_struct_params}}
         }
 
         public async Task<T> GetAllAsync<T>(
@@ -71,10 +76,7 @@ namespace {{project_namespace_persistence}}
             var results = {{resource_name_variable}}Documents
                 .ToEnumerable(
                     ({{resource_name}}Document {{resource_name_variable}}Document) =>
-                        new {{resource_name}}Info
-                        {
-                            Id = {{resource_name_variable}}Document.Id,
-                        })
+                        Convert({{resource_name_variable}}Document))
                 .ToArray();
             return found(results);
         }
@@ -84,9 +86,10 @@ namespace {{project_namespace_persistence}}
             return await this.azureStorageRepository.UpdateAsync<{{resource_name}}Document, TResult>({{resource_name_variable}}Id,
                 async (document, save) =>
                 {
-                    return await success(document.Id,
-                        async () =>
+                    return await success(document.Id, {{persistence_update_document_params_id}}{{persistence_update_document_params}}
+                        async ({{persistence_update_param_names}}) =>
                         {
+	{{persistence_update_document_sets}}
                             await save(document);
                         });
                 },

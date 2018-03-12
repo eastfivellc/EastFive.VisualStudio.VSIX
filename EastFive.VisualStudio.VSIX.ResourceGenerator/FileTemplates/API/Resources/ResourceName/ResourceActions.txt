@@ -21,11 +21,16 @@ namespace {{project_namespace_api}}.Actions
             if (!{{resource_name_variable}}Id.HasValue)
                 return request.CreateResponseEmptyId({{resource_name_variable}}, a => a.Id);
 
+{{api_webid_validation}}
+
             return await request.GetClaimsAsync(
                 async (claims) =>
                 {
                     var context = request.GetPDMSContext();
-                    var response = await context.{{resource_name_plural}}.Create{{resource_name}}Async({{resource_name_variable}}Id.Value, claims,
+                    var response = await context.{{resource_name_plural}}.Create{{resource_name}}Async({{resource_name_variable}}Id.Value,
+							claims,
+							{{api_webid_params}}
+							{{api_create_params}}
                         () =>
                         {
                             return request.CreateResponse(HttpStatusCode.Created);
@@ -57,11 +62,7 @@ namespace {{project_namespace_api}}.Actions
             return await context.{{resource_name_plural}}.FindByIdAsync({{resource_name_variable}}Id, claims,
                 ({{resource_name_variable}}) =>
                 {
-                    var viewModel = new {{resource_name}}()
-                    {
-                        Id = urlHelper.GetWebId<{{resource_name}}Controller>({{resource_name_variable}}.Id),
-                    };
-                    return request.CreateResponse(HttpStatusCode.OK, viewModel);
+					return GetResponse(request, urlHelper, {{resource_name_variable}});
                 },
                 () => request.CreateResponseNotFound({{resource_name_variable}}Id),
                 () => request.CreateResponse(HttpStatusCode.Unauthorized));
@@ -81,9 +82,10 @@ namespace {{project_namespace_api}}.Actions
 
         private static HttpResponseMessage GetResponse(HttpRequestMessage request, UrlHelper url, {{resource_name_plural}}.{{resource_name}}Info {{resource_name_variable}}Info)
         {
-            var {{resource_name_variable}}Result = new {{resource_name}}()
+            var {{resource_name_variable}}Result = new Resources.{{resource_name}}
             {
                 Id = url.GetWebId<{{resource_name}}Controller>({{resource_name_variable}}Info.Id),
+{{api_getresponse_params}}
             };
             var response = request.CreateResponse(HttpStatusCode.OK, {{resource_name_variable}}Result);
             response.Content.Headers.ContentType = new MediaTypeHeaderValue("application/x-{{resource_name_variable}}+json");
@@ -100,8 +102,12 @@ namespace {{project_namespace_api}}.Actions
                     if (!{{resource_name_variable}}Id.HasValue)
                         return request.CreateResponseEmptyId({{resource_name_variable}}, a => a.Id);
 
-                    var context = request.GetPDMSContext();
+{{api_webid_validation}}
+    
+					var context = request.GetPDMSContext();
                     return await context.{{resource_name_plural}}.Update{{resource_name}}Async({{resource_name_variable}}Id.Value, claims,
+							{{api_webid_params}}
+							{{api_update_params}}
                         () => request.CreateResponse(HttpStatusCode.OK),
                         () => request.CreateResponse(HttpStatusCode.NotFound),
                         (message) => request.CreateResponse(HttpStatusCode.Conflict, message),

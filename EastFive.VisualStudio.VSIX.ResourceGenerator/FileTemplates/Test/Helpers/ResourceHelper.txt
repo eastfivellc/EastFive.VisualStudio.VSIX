@@ -10,12 +10,13 @@ namespace {{project_namespace_test}}.Helpers
 {
     public static class {{resource_name}}Helpers
     {
-        public static async Task<HttpResponseMessage> {{resource_name}}PostAsync(this ITestSession session,
-            Guid id, string name)
+        public static async Task<HttpResponseMessage> {{resource_name}}PostAsync(this ITestSession session, 
+			Guid id{{apitest_post_params_with_types_leading_comma}})
         {
             var createNotification = new Resources.{{resource_name}}()
             {
                 Id = new WebId() {UUID = id},
+				{{apitest_post_resource_params}}
             };
             
             var response = await session.PostAsync<{{resource_name}}Controller>(createNotification);
@@ -36,11 +37,13 @@ namespace {{project_namespace_test}}.Helpers
             return response;
         }
 
-        public static async Task<HttpResponseMessage> {{resource_name}}PutAsync(this ITestSession session, Guid id, string name)
+        public static async Task<HttpResponseMessage> {{resource_name}}PutAsync(this ITestSession session, Guid id
+			{{apitest_post_params_with_types_leading_comma}})
         {
             var {{resource_name_variable}} = new Resources.{{resource_name}}()
             {
                 Id = new WebId() { UUID = id },
+				{{apitest_post_resource_params}}
             };
 
             var response = await session.PutAsync<{{resource_name}}Controller>({{resource_name_variable}});

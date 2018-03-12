@@ -277,7 +277,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
             // This is a super kludge, but we don't have a distinct name for our biz layers on which to match
             var shortestCount = 9999;
             var business = string.Empty;
-            foreach(var projectName in projectNames)
+            foreach (var projectName in projectNames)
             {
                 if (projectName.StartsWith("EastFive"))
                     continue;
@@ -313,7 +313,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                 var projects = solution.GetProjects().OrderBy(x => x.Name).ToArray();
                 return onSuccess(projects);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return onError();
             }
@@ -329,7 +329,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                 var path = Path.GetDirectoryName(installationPath);
                 return onFoundPath(path);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return onError();
             }
@@ -353,12 +353,12 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                         var outputPath = Path.Combine(outputApiPath, $"Controllers\\{resourceInfo.ResourceName}Controller.cs");
                         var templatePath = Path.Combine(templateFilePath, "FileTemplates\\API\\Controllers\\Controller.txt");
                         WriteFileFromTemplate(templatePath, outputPath, substitutions, resourceInfo,
-                            ()=>
+                            () =>
                             {
                                 AddFileToProject(projectInfos.First(x => x.Name == resourceInfo.APIProjectName), outputPath);
                                 return true;
                             },
-                            ()=>
+                            () =>
                             {
                                 return false;
                             });
@@ -482,7 +482,7 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                         return onError();
                     });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 MsgBox("Error in WriteProjectFilesFromTemplates", ex.Message);
                 return onError();
@@ -516,7 +516,43 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                 subs.Add("{{api_resource_definition}}", GetResourceDefinition(resourceInfo));
                 subs.Add("{{persistence_document_definition}}", GetDocumentDefinition(resourceInfo));
 
+                subs.Add("{{api_webid_validation}}", GetAPIWebIdValidation(resourceInfo));
+                subs.Add("{{api_webid_params}}", GetAPIWebIdParams(resourceInfo));
+                subs.Add("{{api_create_params}}", GetAPICreateParams(resourceInfo));
+                subs.Add("{{api_getresponse_params}}", GetAPIGetResponseParams(resourceInfo));
+                subs.Add("{{api_update_params}}", GetAPIUpdateParams(resourceInfo));
 
+                subs.Add("{{business_create_params_with_types_ids}}", GetBusinessCreateParamsWithTypesIds(resourceInfo));
+                subs.Add("{{business_create_params_with_types}}", GetBusinessCreateParamsWithTypes(resourceInfo));
+                subs.Add("{{business_create_params_ids}}", GetBusinessCreateParamsIds(resourceInfo));
+                subs.Add("{{business_create_params}}", GetBusinessCreateParams(resourceInfo));
+                subs.Add("{{business_update_params}}", GetBusinessUpdateParams(resourceInfo));
+                subs.Add("{{business_update_params_all}}", GetBusinessUpdateParamsAll(resourceInfo));
+                subs.Add("{{business_update_params_id}}", GetBusinessUpdateParamsId(resourceInfo));
+                subs.Add("{{business_create_params_with_StorageName}}", GetBusinessCreateParamsWithStorageName(resourceInfo));
+                subs.Add("{{business_create_params_with_StorageName_id}}", GetBusinessCreateParamsWithStorageNameId(resourceInfo));
+                subs.Add("{{business_info_param_definitions}}", GetBusinessInfoParamDefinitions(resourceInfo));
+                subs.Add("{{business_resource_convert}}", GetBusinessResourceConvert(resourceInfo));
+
+                subs.Add("{{persistence_params_with_types_with_comma_leader}}", $", {GetPersistenceParamsWithTypes(resourceInfo)}");
+                subs.Add("{{persistence_params_with_types_with_comma_leader_id}}", $", {GetPersistenceParamsWithTypesId(resourceInfo)}");
+                subs.Add("{{persistence_params_with_types}}", GetPersistenceParamsWithTypes(resourceInfo));
+                subs.Add("{{persistence_params_with_types_id}}", GetPersistenceParamsWithTypesId(resourceInfo));
+                subs.Add("{{persistence_params_with_types_with_comma_trailer}}", $"{GetPersistenceParamsWithTypes(resourceInfo)},");
+                subs.Add("{{persistence_params_with_types_with_comma_trailer_id}}", $"{GetPersistenceParamsWithTypesId(resourceInfo)},");
+                subs.Add("{{persistence_params_document_create}}", GetPersistenceParamsDocumentCreate(resourceInfo));
+                subs.Add("{{persistence_params_convert_params}}", GetPersistenceConvertParams(resourceInfo));
+                subs.Add("{{persistence_params_struct_params}}", GetPersistenceStructParams(resourceInfo));
+                subs.Add("{{persistence_update_document_params}}", GetPersistenceDocumentParams(resourceInfo));
+                subs.Add("{{persistence_update_document_params_id}}", GetPersistenceDocumentParamsId(resourceInfo));
+                subs.Add("{{persistence_update_param_names}}", GetPersistenceUpdateParamNames(resourceInfo));
+                subs.Add("{{persistence_update_document_sets}}", GetPersistenceUpdateDocumentSets(resourceInfo));
+                subs.Add("{{persistence_update_save_delegate}}", GetPersistenceUpdateSaveDelegate(resourceInfo));
+
+                
+
+                subs.Add("{{apitest_post_params_with_types_leading_comma}}", GetApiTestPostParams(resourceInfo));
+                subs.Add("{{apitest_post_resource_params}}", GetApiTestPostResourceParams(resourceInfo));
 
                 return onSuccess(subs);
             }
@@ -525,6 +561,447 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
                 MsgBox("GetSubstitutions", ex.Message);
                 return onError();
             }
+        }
+
+        private string GetAPIWebIdValidation(ResourceInfo resourceInfo)
+        {
+            //var riskChannelId = riskChannel.Id.ToGuid();
+            //if (!riskChannelId.HasValue)
+            //    return request.CreateResponseEmptyId(riskChannel, a => a.Id);
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (!parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                text += "\t\t\t";
+                text += $"var {parameterInfo.NameAsVariable}Id = {resourceInfo.ResourceNameVariable}.{parameterInfo.Name}.ToGuid();";
+                text += "\n";
+                text += "\t\t\t";
+                text += $"if (!{parameterInfo.NameAsVariable}Id.HasValue)";
+                text += "\n";
+                text += "\t\t\t\t";
+                text += $"return request.CreateResponseEmptyId({resourceInfo.ResourceNameVariable}, a => a.Id);";
+            }
+            return text;
+        }
+
+        private string GetAPIWebIdParams(ResourceInfo resourceInfo)
+        {
+            //paramId.Value,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (!parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                text += $"{parameterInfo.NameAsVariable}Id.Value, ";
+            }
+            return text;
+        }
+
+        private string GetApiTestPostParams(ResourceInfo resourceInfo)
+        {
+            //, string name
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                text += $", {parameterInfo.Type} {parameterInfo.NameAsVariable}";
+            }
+            return text;
+        }
+
+        private string GetApiTestPostResourceParams(ResourceInfo resourceInfo)
+        {
+            //Name = name,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                text += "\t\t\t\t";
+                text += $"{parameterInfo.Name} = {parameterInfo.NameAsVariable},";
+                text += "\n";
+            }
+            return text;
+        }
+
+        private string GetPersistenceParamsWithTypes(ResourceInfo resourceInfo)
+        {
+            //string name, int count
+            var text = string.Empty;
+            var firstTime = true;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                if (!firstTime)
+                    text += ", ";
+                text += $"{parameterInfo.Type} {parameterInfo.NameAsVariable}";
+                firstTime = false;
+            }
+            return text;
+        }
+
+        private string GetPersistenceParamsWithTypesId(ResourceInfo resourceInfo)
+        {
+            //string name, int count
+            var text = string.Empty;
+            var firstTime = true;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (!parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                if (!firstTime)
+                    text += ", ";
+                text += $"Guid {parameterInfo.NameAsVariable}";
+                firstTime = false;
+            }
+            return text;
+        }
+
+        private string GetPersistenceUpdateSaveDelegate(ResourceInfo resourceInfo)
+        {
+            //string name, int count
+            var idText = GetPersistenceParamsWithTypesId(resourceInfo);
+            var text = GetPersistenceParamsWithTypes(resourceInfo);
+            if (idText != string.Empty)
+                idText += ", ";
+
+            return idText + text;
+        }
+
+        private string GetPersistenceParamsDocumentCreate(ResourceInfo resourceInfo)
+        {
+            //Name = name,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                text += "\t\t\t\t";
+                text += $"{parameterInfo.Name} = {parameterInfo.NameAsVariable},";
+                text += "\n";
+            }
+            return text;
+        }
+
+        private string GetPersistenceConvertParams(ResourceInfo resourceInfo)
+        {
+            //Name = doc.Name
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                text += "\t\t\t\t";
+                text += $"{parameterInfo.Name} = doc.{parameterInfo.Name},";
+                text += "\n";
+            }
+            return text;
+        }
+
+        private string GetPersistenceStructParams(ResourceInfo resourceInfo)
+        {
+            //public string Name;
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                var type = parameterInfo.Type;
+                if (parameterInfo.Type.Contains("WebId"))
+                    type = "Guid";
+
+                text += "\t\t\t";
+                text += $"public {type} {parameterInfo.Name};";
+                text += "\n";
+            }
+            return text;
+        }
+
+        private string GetPersistenceDocumentParams(ResourceInfo resourceInfo)
+        {
+            // document.Name,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                text += $"document.{parameterInfo.Name},";
+            }
+            return text;
+        }
+
+        private string GetPersistenceDocumentParamsId(ResourceInfo resourceInfo)
+        {
+            // document.Name,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (!parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                text += $"document.{parameterInfo.Name},";
+            }
+            return text;
+        }
+
+        private string GetPersistenceUpdateParamNames(ResourceInfo resourceInfo)
+        {
+            // name,
+            var idText = GetPersistenceUpdateParamNamesId(resourceInfo);
+            var text = GetPersistenceUpdateParamNamesNoId(resourceInfo);
+            if (idText != string.Empty)
+                idText += ", ";
+
+            return idText + text;
+        }
+
+        private string GetPersistenceUpdateParamNamesNoId(ResourceInfo resourceInfo)
+        {
+            // name,
+            var text = string.Empty;
+            var firstTime = true;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                if (!firstTime)
+                    text += ", ";
+                text += parameterInfo.NameAsVariable;
+                firstTime = false;
+            }
+            return text;
+        }
+
+        private string GetPersistenceUpdateParamNamesId(ResourceInfo resourceInfo)
+        {
+            // name,
+            var text = string.Empty;
+            var firstTime = true;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (!parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                if (!firstTime)
+                    text += ", ";
+                text += parameterInfo.NameAsVariable;
+                firstTime = false;
+            }
+            return text;
+        }
+
+        private string GetPersistenceUpdateDocumentSets(ResourceInfo resourceInfo)
+        {
+            //document.Name = name;
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                text += "\t\t\t\t\t\t";
+                text += $"document.{parameterInfo.Name} = {parameterInfo.NameAsVariable};";
+                text += "\n";
+            }
+            return text;
+        }
+
+        private string GetBusinessCreateParamsWithTypesIds(ResourceInfo resourceInfo)
+        {
+            //guid thingId,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (parameterInfo.Type != "WebId")
+                    continue;
+
+                text += $"Guid {parameterInfo.NameAsVariable}, ";
+            }
+            return text;
+        }
+
+        private string GetBusinessCreateParamsWithTypes(ResourceInfo resourceInfo)
+        {
+            //string name, int count,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (parameterInfo.Type == "WebId")
+                    continue;
+
+                text += $"{parameterInfo.Type} {parameterInfo.NameAsVariable}, ";
+            }
+            return text;
+        }
+
+        private string GetBusinessCreateParamsIds(ResourceInfo resourceInfo)
+        {
+            //name, count,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (!parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                text += $"{parameterInfo.NameAsVariable}, ";
+            }
+            return text;
+        }
+
+        private string GetBusinessCreateParams(ResourceInfo resourceInfo)
+        {
+            //name, count,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                text += $"{parameterInfo.NameAsVariable}, ";
+            }
+            return text;
+        }
+
+        private string GetBusinessUpdateParams(ResourceInfo resourceInfo)
+        {
+            //name, count,
+            var text = string.Empty;
+            var firstTime = true;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                if (!firstTime)
+                    text += ", ";
+                text += $"{parameterInfo.NameAsVariable}";
+                firstTime = false;
+            }
+            return text;
+        }
+
+        private string GetBusinessUpdateParamsId(ResourceInfo resourceInfo)
+        {
+            //name, count,
+            var text = string.Empty;
+            var firstTime = true;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (!parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                if (!firstTime)
+                    text += ", ";
+                text += $"{parameterInfo.NameAsVariable}";
+                firstTime = false;
+            }
+            return text;
+        }
+
+        private string GetBusinessUpdateParamsAll(ResourceInfo resourceInfo)
+        {
+            //name, count,
+            var idText = GetBusinessUpdateParamsId(resourceInfo);
+            var text = GetBusinessUpdateParams(resourceInfo);
+            if (idText != string.Empty)
+                idText += ", ";
+
+            return idText + text;
+        }
+
+        private string GetBusinessCreateParamsWithStorageName(ResourceInfo resourceInfo)
+        {
+            //name, count,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                text += $"{parameterInfo.NameAsVariable}Storage, ";
+            }
+            return text;
+        }
+
+        private string GetBusinessCreateParamsWithStorageNameId(ResourceInfo resourceInfo)
+        {
+            //name, count,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (!parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                text += $"{parameterInfo.NameAsVariable}Storage, ";
+            }
+            return text;
+        }
+
+        private string GetBusinessInfoParamDefinitions(ResourceInfo resourceInfo)
+        {
+            //public string Name;
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                var type = parameterInfo.Type;
+                if (parameterInfo.Type.Contains("WebId"))
+                    type = "Guid";
+
+                text += "\t\t\t";
+                text += $"public {type} {parameterInfo.Name};";
+                text += "\n";
+            }
+            return text;
+        }
+
+        private string GetBusinessResourceConvert(ResourceInfo resourceInfo)
+        {
+            //Name = riskChannel.Name,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                text += "\t\t\t\t";
+                text += $"{parameterInfo.Name} = {resourceInfo.ResourceNameVariable}.{parameterInfo.Name},";
+                text += "\n";
+            }
+            return text;
+        }
+
+        private string GetAPICreateParams(ResourceInfo resourceInfo)
+        {
+            //riskChannel.Name, riskChannel.Blah,
+            var text = string.Empty;
+            foreach(var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                text += $"{resourceInfo.ResourceNameVariable}.{parameterInfo.Name}, ";
+            }
+            return text;
+        }
+
+        private string GetAPIGetResponseParams(ResourceInfo resourceInfo)
+        {
+            //Name = riskChannelInfo.Name,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                text += "\t\t\t\t";
+                text += $"{parameterInfo.Name} = {resourceInfo.ResourceNameVariable}Info.{parameterInfo.Name}, ";
+                text += "\n";
+            }
+            return text;
+        }
+
+        private string GetAPIUpdateParams(ResourceInfo resourceInfo)
+        {
+            // riskChannel.Name,
+            var text = string.Empty;
+            foreach (var parameterInfo in resourceInfo.ParameterInfos)
+            {
+                if (parameterInfo.Type.Contains("WebId"))
+                    continue;
+
+                text += $"{resourceInfo.ResourceNameVariable}.{parameterInfo.Name}, ";
+            }
+            return text;
         }
 
         private string GetResourceDefinition(ResourceInfo resourceInfo)
@@ -552,9 +1029,13 @@ namespace EastFive.VisualStudio.VSIX.ResourceGenerator
 
             foreach (var parameter in resourceInfo.ParameterInfos)
             {
+                var type = parameter.Type;
+                if (parameter.Type.Contains("WebId"))
+                    type = "Guid";
+
                 documentDefinition += "\n";
                 documentDefinition += "\t\t";
-                documentDefinition += $"public {parameter.Type} {parameter.Name} ";
+                documentDefinition += $"public {type} {parameter.Name} ";
                 documentDefinition += "{ get; set; }";
                 documentDefinition += "\n";
             }
